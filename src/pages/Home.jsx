@@ -53,7 +53,7 @@ const productosDestacados = [
     imagen: producto6,
   },
 ];
-function Index(){
+function Home(){
     const settings = {
         dots: true,           
         infinite: true,
@@ -128,4 +128,4 @@ function Index(){
         </div>
     );
 }
-export default Index;
+export default Home;
