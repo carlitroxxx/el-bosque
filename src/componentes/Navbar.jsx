@@ -38,13 +38,13 @@ function Navbar() {
               <Link className="nav-link" to="/catalogo">Productos</Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="#">Nosotros</Link>
+              <Link className="nav-link" to="/nosotros">Nosotros</Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="#">Blogs</Link>
+              <Link className="nav-link" to="/blogs">Blogs</Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="#">Contacto</Link>
+              <Link className="nav-link" to="/contacto">Contacto</Link>
             </li>
           </ul>
         </div>
