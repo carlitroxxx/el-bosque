@@ -8,6 +8,7 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
   const [stock, setStock] = useState("");
   const [stockCritico, setStockCritico] = useState("");
   const [categoria, setCategoria] = useState("");
+  const [imagen, setImagen] = useState(""); // 🆕 nuevo campo para imagen
 
   // Precargar los campos si estamos editando
   useEffect(() => {
@@ -19,6 +20,7 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
       setStock(productoEditar.stock || "");
       setStockCritico(productoEditar.stockCritico || "");
       setCategoria(productoEditar.categoria || "");
+      setImagen(productoEditar.imagen || ""); // 🆕 precargar imagen
     } else {
       // Limpiar campos al abrir para crear
       setCodigo("");
@@ -28,6 +30,7 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
       setStock("");
       setStockCritico("");
       setCategoria("");
+      setImagen("");
     }
   }, [productoEditar, isOpen]);
 
@@ -42,6 +45,7 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
       stock,
       stockCritico,
       categoria,
+      imagen, // 🆕 guardar solo el nombre del archivo
     };
 
     onGuardar(producto);
@@ -54,8 +58,16 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
     setStock("");
     setStockCritico("");
     setCategoria("");
+    setImagen("");
 
     onClose();
+  };
+
+  const handleImagenChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImagen(file.name); // 🆕 solo guarda el nombre del archivo
+    }
   };
 
   if (!isOpen) return null;
@@ -76,18 +88,20 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
           </div>
           <div className="modal-body">
             <form onSubmit={handleSubmit}>
+              {/* Código */}
               <div className="mb-3">
-              <label className="form-label">Código</label>
-              <input
-                type="text"
-                className="form-control"
-                value={codigo}
-                onChange={(e) => setCodigo(e.target.value)}
-                required
-                disabled={!!productoEditar}
-              />
-            </div>
+                <label className="form-label">Código</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={codigo}
+                  onChange={(e) => setCodigo(e.target.value)}
+                  required
+                  disabled={!!productoEditar}
+                />
+              </div>
 
+              {/* Nombre */}
               <div className="mb-3">
                 <label className="form-label">Nombre</label>
                 <input
@@ -98,6 +112,8 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
                   required
                 />
               </div>
+
+              {/* Descripción */}
               <div className="mb-3">
                 <label className="form-label">Descripción</label>
                 <textarea
@@ -107,6 +123,8 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
                   required
                 ></textarea>
               </div>
+
+              {/* Precio */}
               <div className="mb-3">
                 <label className="form-label">Precio</label>
                 <input
@@ -117,6 +135,8 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
                   required
                 />
               </div>
+
+              {/* Stock actual */}
               <div className="mb-3">
                 <label className="form-label">Stock Actual</label>
                 <input
@@ -126,6 +146,8 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
                   onChange={(e) => setStock(e.target.value)}
                 />
               </div>
+
+              {/* Stock crítico */}
               <div className="mb-3">
                 <label className="form-label">Stock Crítico</label>
                 <input
@@ -135,6 +157,8 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
                   onChange={(e) => setStockCritico(e.target.value)}
                 />
               </div>
+
+              {/* Categoría */}
               <div className="mb-3">
                 <label className="form-label">Categoría</label>
                 <select
@@ -152,6 +176,23 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
                   <option value="Otro">Otro</option>
                 </select>
               </div>
+
+              {/* 🆕 Imagen */}
+              <div className="mb-3">
+                <label className="form-label">Imagen del producto</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="form-control"
+                  onChange={handleImagenChange}
+                />
+                {imagen && (
+                  <small className="text-muted d-block mt-1">
+                    Nombre guardado: <strong>{imagen}</strong>
+                  </small>
+                )}
+              </div>
+
               <div className="d-grid">
                 <button type="submit" className="btn btn-primary btn-lg">
                   {productoEditar ? "Actualizar" : "Registrar"}
