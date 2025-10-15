@@ -12,10 +12,9 @@ import ProductoDestacado from "../componentes/ProductoDestacado";
 function Home() {
   const [productosDestacados, setProductosDestacados] = useState([]);
 
-  // 🧩 Cargar productos desde localStorage
   useEffect(() => {
     const productosGuardados = JSON.parse(localStorage.getItem("productos")) || [];
-    setProductosDestacados(productosGuardados.slice(0, 6)); // mostrar solo los primeros 6
+    setProductosDestacados(productosGuardados.slice(0, 6));
   }, []);
 
   const settings = {
@@ -73,7 +72,6 @@ function Home() {
         </div>
       </div>
 
-      {/* 🧱 Productos Destacados */}
       <div className="container my-5">
         <h3 className="mb-4">Productos Destacados</h3>
 

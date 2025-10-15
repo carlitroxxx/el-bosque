@@ -5,41 +5,39 @@ import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/images/logo_mercado.jpg";
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    correo: "",
-    contraseña: ""
-  });
-
+  const [formData, setFormData] = useState({ correo: "", contraseña: "" });
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { id, value } = e.target;
-    setFormData(prevState => ({
-      ...prevState,
-      [id]: value
-    }));
+    setFormData(prev => ({ ...prev, [id]: value }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Simulación de login - aquí puedes integrar con tu backend
-    console.log("Datos de login:", formData);
-    
-    // Guardar en localStorage para simular sesión
-    localStorage.setItem("usuario", JSON.stringify({
-      correo: formData.correo,
-      loggedIn: true
-    }));
-    
+
+    const usuarios = JSON.parse(localStorage.getItem("usuarios")) || [];
+    const user = usuarios.find(
+      u => u.correo === formData.correo && u.contrasena === formData.contraseña
+    );
+
+    if (!user) {
+      alert("Correo o contraseña incorrectos");
+      return;
+    }
+
+    // Guardar sesión
+    const session = {
+      correo: user.correo,
+      nombre: user.nombre,
+      rol: user.rol, // "ADMINISTRADOR" o "CLIENTE"
+      loggedIn: true,
+    };
+    localStorage.setItem("session", JSON.stringify(session));
+
     alert("Inicio de sesión exitoso");
-    navigate("/"); // Redirigir al home después del login
-    
-    // Limpiar formulario
-    setFormData({
-      correo: "",
-      contraseña: ""
-    });
+    navigate("/");
+    setFormData({ correo: "", contraseña: "" });
   };
 
   return (
@@ -49,14 +47,8 @@ const Login = () => {
       <main className="d-flex justify-content-center bg-light py-5 flex-grow-1">
         <div className="card shadow" style={{ maxWidth: "400px", width: "100%" }}>
           <div className="card-body p-4">
-
-            {/* Logo / Nombre empresa */}
             <div className="text-center mb-3">
-              <img 
-                src={logo} 
-                alt="Logo" 
-                style={{ maxWidth: "130px" }} 
-              />
+              <img src={logo} alt="Logo" style={{ maxWidth: "130px" }} />
               <h5 className="mt-2">Minimercado El Bosque</h5>
             </div>
 
@@ -65,26 +57,12 @@ const Login = () => {
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
                 <label htmlFor="correo" className="form-label">CORREO</label>
-                <input 
-                  type="email" 
-                  className="form-control" 
-                  id="correo" 
-                  value={formData.correo}
-                  onChange={handleChange}
-                  required 
-                />
+                <input type="email" className="form-control" id="correo" value={formData.correo} onChange={handleChange} required />
               </div>
 
               <div className="mb-4">
                 <label htmlFor="contraseña" className="form-label">CONTRASEÑA</label>
-                <input 
-                  type="password" 
-                  className="form-control" 
-                  id="contraseña" 
-                  value={formData.contraseña}
-                  onChange={handleChange}
-                  required 
-                />
+                <input type="password" className="form-control" id="contraseña" value={formData.contraseña} onChange={handleChange} required />
               </div>
 
               <div className="d-grid">
@@ -95,7 +73,6 @@ const Login = () => {
             <div className="text-center mt-3">
               <p>¿No tienes cuenta? <Link to="/registro">Regístrate</Link></p>
             </div>
-
           </div>
         </div>
       </main>
