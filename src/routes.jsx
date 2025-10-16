@@ -11,6 +11,7 @@ import Detalle2 from "./pages/Detalle2"
 import Contacto from "./pages/Contacto";
 import Login from "./pages/Login"
 import Registro from "./pages/Registro"
+import Carrito from "./pages/Carrito"
 
 export default function AppRoutes(){
     return(
@@ -27,6 +28,7 @@ export default function AppRoutes(){
             <Route path="/contacto" element={<Contacto />} />
             <Route path="/login" element={<Login />} />
             <Route path="/registro" element={<Registro />} />
+            <Route path="/carrito" element={<Carrito />} />
         </Routes>
     );
 }

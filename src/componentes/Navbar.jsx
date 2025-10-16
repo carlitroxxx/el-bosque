@@ -49,7 +49,13 @@ function Navbar() {
           </ul>
         </div>
 
-        <div className="d-flex ms-auto">
+        <div className="d-flex ms-auto align-items-center">
+          
+          <Link to="/carrito" className="btn btn-outline-light me-3">
+            <i className="bi bi-cart me-1"></i> Carrito
+          </Link>
+          
+          
           <Link to="/login" className="btn btn-outline-light me-2">Iniciar sesión</Link>
           <Link to="/registro" className="btn btn-warning">Registrarse</Link>
         </div>
