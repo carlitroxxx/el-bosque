@@ -39,7 +39,6 @@ function Home() {
     <div className="App d-flex flex-column min-vh-100">
       <Navbar />
 
-      {/* Sección bienvenida */}
       <div className="container my-5 bg-secondary-subtle rounded">
         <div className="row align-items-center">
           <div className="col-md-6 d-flex flex-column justify-content-center py-4 px-5">

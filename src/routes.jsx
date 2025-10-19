@@ -1,48 +1,45 @@
 // src/routes.jsx
-import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
+import React from "react";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+
 import Home from "./pages/Home";
-import Dashboard from "./pages/vista-admin/Dashboard";
-import Productos from "./pages/vista-admin/Productos";
-import Usuarios from "./pages/vista-admin/Usuarios";
 import Catalogo from "./pages/Catalogo";
 import Nosotros from "./pages/Nosotros";
 import Blogs from "./pages/Blogs";
 import Detalle1 from "./pages/Detalle1";
 import Detalle2 from "./pages/Detalle2";
 import Contacto from "./pages/Contacto";
+
 import Login from "./pages/Login";
 import Registro from "./pages/Registro";
-import React, { useEffect } from "react";
 
-function getSession() {
-  try { return JSON.parse(localStorage.getItem("session")); }
-  catch { return null; }
-}
+import Dashboard from "./pages/vista-admin/Dashboard";
+import Productos from "./pages/vista-admin/Productos";
+import Usuarios from "./pages/vista-admin/Usuarios";
 
-function RequireAdmin({ children }) {
-  const session = getSession();
-  const navigate = useNavigate();
+import { sesionActual, buscarUsuarioPorCorreo } from "./lib/auth";
+import Carrito from "./pages/Carrito";
+
+function RequiereRol({ roles, children }) {
+  const ses = sesionActual();
   const location = useLocation();
 
-  useEffect(() => {
-    if (!session?.loggedIn) {
-      navigate("/login", { replace: true, state: { from: location } });
-      return;
-    }
-    if (session.rol !== "ADMINISTRADOR") {
-      window.alert("Tu usuario no tiene acceso a esta página.");
-      navigate("/", { replace: true });
-    }
-  }, [session, navigate, location]);
+  if (!ses?.logeado) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
 
-  if (!session?.loggedIn || session.rol !== "ADMINISTRADOR") return null;
+  const usuario = buscarUsuarioPorCorreo(ses.correo);
+  const rolUsuario = usuario?.rol;
+  if (!rolUsuario || !roles.includes(rolUsuario)) {
+    return <Navigate to="/" replace />;
+  }
+
   return children;
 }
 
-export default function AppRoutes() {
+export default function Rutas() {
   return (
     <Routes>
-      {/* Públicas */}
       <Route path="/" element={<Home />} />
       <Route path="/catalogo" element={<Catalogo />} />
       <Route path="/nosotros" element={<Nosotros />} />
@@ -50,34 +47,38 @@ export default function AppRoutes() {
       <Route path="/detalle1" element={<Detalle1 />} />
       <Route path="/detalle2" element={<Detalle2 />} />
       <Route path="/contacto" element={<Contacto />} />
+      <Route path="/carrito" element={<Carrito />} />
+
       <Route path="/login" element={<Login />} />
       <Route path="/registro" element={<Registro />} />
 
-      {/* Admin con popup si no tiene permisos */}
+      {/*Rutas exclusivas de rol admin*/}
       <Route
         path="/dashboard"
         element={
-          <RequireAdmin>
+          <RequiereRol roles={["admin"]}>
             <Dashboard />
-          </RequireAdmin>
+          </RequiereRol>
         }
       />
       <Route
         path="/productos"
         element={
-          <RequireAdmin>
+          <RequiereRol roles={["admin"]}>
             <Productos />
-          </RequireAdmin>
+          </RequiereRol>
         }
       />
       <Route
         path="/usuarios"
         element={
-          <RequireAdmin>
+          <RequiereRol roles={["admin"]}>
             <Usuarios />
-          </RequireAdmin>
+          </RequiereRol>
         }
       />
+
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
