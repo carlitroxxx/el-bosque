@@ -1,101 +1,111 @@
+// src/pages/Login.jsx
 import React, { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../componentes/Navbar";
 import Footer from "../componentes/Footer";
-import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/images/logo_mercado.jpg";
+import { iniciarSesion, sesionActual, buscarUsuarioPorCorreo } from "../lib/auth";
 
-const Login = () => {
-  const [formData, setFormData] = useState({
-    correo: "",
-    contraseña: ""
-  });
+export default function Login() {
+  const [form, setForm] = useState({ correo: "", contrasena: "" });
+  const [error, setError] = useState("");
+  const nav = useNavigate();
+  const loc = useLocation();
+  const volverA = loc.state?.from?.pathname || "/";
 
-  const navigate = useNavigate();
+  const onChange = (e) => setForm({ ...form, [e.target.id]: e.target.value });
 
-  const handleChange = (e) => {
-    const { id, value } = e.target;
-    setFormData(prevState => ({
-      ...prevState,
-      [id]: value
-    }));
-  };
-
-  const handleSubmit = (e) => {
+  const onSubmit = (e) => {
     e.preventDefault();
-    
-    // Simulación de login - aquí puedes integrar con tu backend
-    console.log("Datos de login:", formData);
-    
-    // Guardar en localStorage para simular sesión
-    localStorage.setItem("usuario", JSON.stringify({
-      correo: formData.correo,
-      loggedIn: true
-    }));
-    
-    alert("Inicio de sesión exitoso");
-    navigate("/"); // Redirigir al home después del login
-    
-    // Limpiar formulario
-    setFormData({
-      correo: "",
-      contraseña: ""
-    });
+    setError("");
+    try {
+      // --- lógica original (CÓDIGO 1) ---
+      iniciarSesion(form);
+      const ses = sesionActual();
+      const u = ses?.logeado ? buscarUsuarioPorCorreo(ses.correo) : null;
+
+      if (u?.rol === "admin") {
+        nav("/dashboard", { replace: true });
+      } else {
+        nav(volverA, { replace: true });
+      }
+    } catch (err) {
+      setError(err.message || "No fue posible iniciar sesión.");
+    }
   };
 
   return (
     <div className="d-flex flex-column min-vh-100">
       <Navbar />
 
-      <main className="d-flex justify-content-center bg-light py-5 flex-grow-1">
-        <div className="card shadow" style={{ maxWidth: "400px", width: "100%" }}>
+      <main className="d-flex justify-content-center align-items-center bg-light flex-grow-1 py-5">
+        <div className="card shadow" style={{ maxWidth: 420, width: "100%" }}>
           <div className="card-body p-4">
 
-            {/* Logo / Nombre empresa */}
+            {/* Logo + nombre tienda */}
             <div className="text-center mb-3">
-              <img 
-                src={logo} 
-                alt="Logo" 
-                style={{ maxWidth: "130px" }} 
+              <img
+                src={logo}
+                alt="Logo Minimercado El Bosque"
+                style={{ maxWidth: 120 }}
+                className="rounded-circle"
               />
-              <h5 className="mt-2">Minimercado El Bosque</h5>
+              <h5 className="mt-2 mb-0">Minimercado El Bosque</h5>
             </div>
 
-            <h4 className="text-center mb-4">Inicio de sesión</h4>
+            <h4 className="text-center mb-3">Inicio de sesión</h4>
 
-            <form onSubmit={handleSubmit}>
+            {/* Alert de error (si corresponde) */}
+            {error && (
+              <div className="alert alert-danger py-2" role="alert">
+                {error}
+              </div>
+            )}
+
+            {/* Formulario */}
+            <form onSubmit={onSubmit} noValidate>
               <div className="mb-3">
-                <label htmlFor="correo" className="form-label">CORREO</label>
-                <input 
-                  type="email" 
-                  className="form-control" 
-                  id="correo" 
-                  value={formData.correo}
-                  onChange={handleChange}
-                  required 
+                <label htmlFor="correo" className="form-label fw-semibold small text-uppercase">
+                  Correo
+                </label>
+                <input
+                  type="email"
+                  id="correo"
+                  className="form-control"
+                  value={form.correo}
+                  onChange={onChange}
+                  required
+                  placeholder="tucorreo@dominio.cl"
                 />
               </div>
 
               <div className="mb-4">
-                <label htmlFor="contraseña" className="form-label">CONTRASEÑA</label>
-                <input 
-                  type="password" 
-                  className="form-control" 
-                  id="contraseña" 
-                  value={formData.contraseña}
-                  onChange={handleChange}
-                  required 
+                <label htmlFor="contrasena" className="form-label fw-semibold small text-uppercase">
+                  Contraseña
+                </label>
+                <input
+                  type="password"
+                  id="contrasena"
+                  className="form-control"
+                  value={form.contrasena}
+                  onChange={onChange}
+                  required
+                  placeholder="********"
                 />
               </div>
 
               <div className="d-grid">
-                <button type="submit" className="btn btn-primary">Iniciar sesión</button>
+                <button type="submit" className="btn btn-primary">
+                  Iniciar sesión
+                </button>
               </div>
             </form>
 
             <div className="text-center mt-3">
-              <p>¿No tienes cuenta? <Link to="/registro">Regístrate</Link></p>
+              <small>
+                ¿No tienes cuenta? <Link to="/registro">Regístrate</Link>
+              </small>
             </div>
-
           </div>
         </div>
       </main>
@@ -103,6 +113,4 @@ const Login = () => {
       <Footer />
     </div>
   );
-};
-
-export default Login;
+}

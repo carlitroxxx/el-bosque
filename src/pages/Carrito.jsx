@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "../componentes/Navbar";
 import Footer from "../componentes/Footer";
-import { Link } from "react-router-dom";
 
 const Carrito = () => {
   const [carrito, setCarrito] = useState([]);

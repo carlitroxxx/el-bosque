@@ -12,10 +12,9 @@ import ProductoDestacado from "../componentes/ProductoDestacado";
 function Home() {
   const [productosDestacados, setProductosDestacados] = useState([]);
 
-  // 🧩 Cargar productos desde localStorage
   useEffect(() => {
     const productosGuardados = JSON.parse(localStorage.getItem("productos")) || [];
-    setProductosDestacados(productosGuardados.slice(0, 6)); // mostrar solo los primeros 6
+    setProductosDestacados(productosGuardados.slice(0, 6));
   }, []);
 
   const settings = {
@@ -40,7 +39,6 @@ function Home() {
     <div className="App d-flex flex-column min-vh-100">
       <Navbar />
 
-      {/* Sección bienvenida */}
       <div className="container my-5 bg-secondary-subtle rounded">
         <div className="row align-items-center">
           <div className="col-md-6 d-flex flex-column justify-content-center py-4 px-5">
@@ -73,7 +71,6 @@ function Home() {
         </div>
       </div>
 
-      {/* 🧱 Productos Destacados */}
       <div className="container my-5">
         <h3 className="mb-4">Productos Destacados</h3>
 

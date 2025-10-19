@@ -24,6 +24,7 @@ const ModalUsuario = ({ isOpen, onClose, onGuardar }) => {
       telefono,
       region,
       comuna,
+      rol:"CLIENTE"
     };
 
     onGuardar(nuevoUsuario);
