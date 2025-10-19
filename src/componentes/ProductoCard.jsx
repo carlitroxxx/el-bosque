@@ -27,11 +27,8 @@ const ProductoCard = ({ producto, onAgregar }) => {
           >
             Agregar
           </button>
-          <Link
-            to={`/detalle_producto/${producto.id}`}
-            className="btn btn-outline-secondary w-100"
-          >
-            Ver Detalle
+          <Link to={`/producto/${producto.id}`} className="btn btn-outline-primary">
+            Ver detalle
           </Link>
         </div>
       </div>
