@@ -9,7 +9,7 @@ import Blogs from "./pages/Blogs";
 import Detalle1 from "./pages/Detalle1";
 import Detalle2 from "./pages/Detalle2";
 import Contacto from "./pages/Contacto";
-
+import ProductoDetalle from "./pages/ProductoDetalle";
 import Login from "./pages/Login";
 import Registro from "./pages/Registro";
 
@@ -48,7 +48,7 @@ export default function Rutas() {
       <Route path="/detalle2" element={<Detalle2 />} />
       <Route path="/contacto" element={<Contacto />} />
       <Route path="/carrito" element={<Carrito />} />
-
+      <Route path="/producto/:id" element={<ProductoDetalle />} />
       <Route path="/login" element={<Login />} />
       <Route path="/registro" element={<Registro />} />
 
