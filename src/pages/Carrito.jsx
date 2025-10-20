@@ -67,7 +67,7 @@ const Carrito = () => {
 
   const actualizarCantidad = (codigo, nuevaCantidad) => {
     if (nuevaCantidad < 1) return;
-    const productoOriginal = productos.find(p => String(p.id) === String(id));
+    const productoOriginal = productos.find(p => String(p.codigo) === String(codigo));
     if (productoOriginal && typeof productoOriginal.stock === 'number' && nuevaCantidad > productoOriginal.stock) {
         alert(`No puedes agregar más. Stock disponible: ${productoOriginal.stock}.`);
         return;
