@@ -2,7 +2,6 @@ import React from "react";
 import { Link } from "react-router-dom";
 
 const ProductoCard = ({ producto, onAgregar }) => {
-  // Si el producto tiene imagen, construimos la ruta
   const rutaImagen = producto.imagen
     ? require(`../assets/images/${producto.imagen}`)
     : require(`../assets/images/producto1.jpg`);

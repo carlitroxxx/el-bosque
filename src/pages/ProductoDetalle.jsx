@@ -127,7 +127,6 @@ export default function ProductoDetalle() {
             />
           </div>
 
-          {/* ======= CARD DERECHA CON BORDE ======= */}
           <div className="col-md-6">
             <div className="card border rounded-3 shadow-sm h-100">
               <div className="card-body">
@@ -140,7 +139,6 @@ export default function ProductoDetalle() {
                   {producto.descripcion || "Descripción no disponible para este producto."}
                 </p>
 
-                {/* ======= CANTIDAD COMO INPUT-GROUP (solo visual) ======= */}
                 <div className="mb-3">
                   <label htmlFor="cantidad" className="form-label">Cantidad</label>
                   <div className="input-group" style={{ maxWidth: 260 }}>
@@ -163,7 +161,6 @@ export default function ProductoDetalle() {
                   )}
                 </div>
 
-                {/* ======= BOTÓN MEJORADO "AÑADIR AL CARRITO" ======= */}
                 <button
                   className="btn btn-primary btn-lg w-100 shadow-sm rounded-3 d-flex align-items-center justify-content-center gap-2"
                   onClick={agregarAlCarrito}
@@ -174,7 +171,6 @@ export default function ProductoDetalle() {
               </div>
             </div>
           </div>
-          {/* ====================================== */}
         </div>
 
         {relacionados.length > 0 && (

@@ -8,6 +8,9 @@ const Productos = () => {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [productoEditar, setProductoEditar] = useState(null);
 
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [productoAEliminar, setProductoAEliminar] = useState(null);
+
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("productos")) || [];
     setProductos(stored);
@@ -25,15 +28,19 @@ const Productos = () => {
     };
     let updated;
     if (productoEditar) {
-      updated = productos.map((p) => (p.codigo === productoEditar.codigo ? { ...p, ...normalizado } : p));
+      updated = productos.map((p) => (String(p.codigo) === String(productoEditar.codigo) ? { ...p, ...normalizado } : p));
     } else {
-      if (productos.some(p => String(p.codigo) === String(normalizado.codigo))) { alert("Ya existe un producto con ese código."); return; }
+      if (productos.some(p => String(p.codigo) === String(normalizado.codigo))) {
+        alert("Ya existe un producto con ese código.");
+        return;
+      }
       updated = [...productos, { ...normalizado }];
     }
     setProductos(updated);
     localStorage.setItem("productos", JSON.stringify(updated));
     setModalAbierto(false);
     setProductoEditar(null);
+
     if (
       normalizado.stockCritico !== null &&
       Number.isFinite(normalizado.stockCritico) &&
@@ -43,10 +50,23 @@ const Productos = () => {
     }
   };
 
-  const eliminarProducto = (row) => {
-    const updated = productos.filter((p) => p.codigo !== row.codigo);
+  const solicitarEliminar = (row) => {
+    setProductoAEliminar(row);
+    setShowConfirm(true);
+  };
+
+  const cancelarEliminar = () => {
+    setProductoAEliminar(null);
+    setShowConfirm(false);
+  };
+
+  const confirmarEliminar = () => {
+    if (!productoAEliminar) return;
+    const updated = productos.filter((p) => String(p.codigo) !== String(productoAEliminar.codigo));
     setProductos(updated);
     localStorage.setItem("productos", JSON.stringify(updated));
+    setProductoAEliminar(null);
+    setShowConfirm(false);
   };
 
   const columnas = [
@@ -87,7 +107,7 @@ const Productos = () => {
               columns={columnas}
               data={productos}
               onEditar={editarProducto}
-              onEliminar={eliminarProducto}
+              onEliminar={solicitarEliminar} 
             />
           </div>
         </div>
@@ -99,6 +119,32 @@ const Productos = () => {
         onGuardar={guardarProducto}
         productoEditar={productoEditar}
       />
+
+      {showConfirm && (
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+          style={{ background: "rgba(0,0,0,0.5)", zIndex: 2000 }}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="bg-white rounded-3 shadow p-4" style={{ width: 420, maxWidth: "92%" }}>
+            <h5 className="mb-2">Confirmar eliminación</h5>
+            <p className="mb-4">
+              ¿Seguro que quieres eliminar el producto{" "}
+              <strong>{productoAEliminar?.nombre}</strong> (código{" "}
+              <code>{productoAEliminar?.codigo}</code>)? Esta acción no se puede deshacer.
+            </p>
+            <div className="d-flex justify-content-end gap-2">
+              <button className="btn btn-light" onClick={cancelarEliminar}>
+                Cancelar
+              </button>
+              <button className="btn btn-danger" onClick={confirmarEliminar}>
+                Sí, eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

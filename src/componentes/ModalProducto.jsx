@@ -10,10 +10,8 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
   const [categoria, setCategoria] = useState("");
   const [imagen, setImagen] = useState("");
 
-  // 🔴 div de error controlado
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Precargar los campos si estamos editando
   useEffect(() => {
     if (productoEditar) {
       setCodigo(productoEditar.codigo || "");
@@ -38,7 +36,6 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
       setImagen(productoEditar.imagen || "");
       setErrorMsg("");
     } else {
-      // Limpiar campos al abrir para crear
       setCodigo("");
       setNombre("");
       setDescripcion("");
@@ -51,37 +48,30 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
     }
   }, [productoEditar, isOpen]);
 
-  // 🛡️ Validador central: lanza throw Error("...") en la primera regla que falle
   const validar = () => {
     const trim = (v) => (typeof v === "string" ? v.trim() : v);
 
-    // Código (texto, min 3, requerido)
     if (!trim(codigo)) throw new Error("El código es obligatorio.");
     if (trim(codigo).length < 3) throw new Error("El código debe tener al menos 3 caracteres.");
 
-    // Nombre (requerido, max 100)
     if (!trim(nombre)) throw new Error("El nombre es obligatorio.");
     if (trim(nombre).length > 100) throw new Error("El nombre no puede superar 100 caracteres.");
 
-    // Descripción (opcional, max 500)
     if (trim(descripcion) && trim(descripcion).length > 500)
       throw new Error("La descripción no puede superar 500 caracteres.");
 
-    // Precio (requerido, min 0, decimales permitidos)
     if (trim(precio) === "" || precio === null) throw new Error("El precio es obligatorio.");
     const precioNum = Number(precio);
     if (!Number.isFinite(precioNum)) throw new Error("El precio debe ser un número.");
     if (!Number.isInteger(precioNum)) throw new Error("El precio debe ser un número entero.");
     if (precioNum < 0) throw new Error("El precio no puede ser negativo.");
 
-    // Stock (requerido, min 0, entero)
     if (trim(stock) === "" || stock === null) throw new Error("El stock es obligatorio.");
     const stockNum = Number(stock);
     if (!Number.isFinite(stockNum)) throw new Error("El stock debe ser un número.");
     if (!Number.isInteger(stockNum)) throw new Error("El stock debe ser un número entero.");
     if (stockNum < 0) throw new Error("El stock no puede ser negativo.");
 
-    // Stock crítico (opcional, min 0, entero)
     let stockCritNum = null;
     if (trim(stockCritico) !== "") {
       stockCritNum = Number(stockCritico);
@@ -90,29 +80,26 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
       if (stockCritNum < 0) throw new Error("El stock crítico no puede ser negativo.");
     }
 
-    // Categoría (select requerido)
     if (!trim(categoria)) throw new Error("Debes seleccionar una categoría.");
 
-    // Retorno normalizado listo para guardar
     return {
       codigo: trim(codigo),
       nombre: trim(nombre),
       descripcion: trim(descripcion),
       precio: precioNum,
       stock: stockNum,
-      stockCritico: stockCritNum, // puede quedar null si no lo informan
+      stockCritico: stockCritNum,
       categoria: trim(categoria),
-      imagen: imagen || "", // opcional
+      imagen: imagen || "", 
     };
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     try {
-      setErrorMsg(""); // limpiar error previo
-      const producto = validar(); // 🔥 aquí se lanzan los throw Error si algo falla
-      onGuardar(producto); // delega guardado al padre
-      // Limpiar y cerrar solo si se guardó
+      setErrorMsg("");
+      const producto = validar(); 
+      onGuardar(producto);
       setCodigo("");
       setNombre("");
       setDescripcion("");
@@ -123,7 +110,6 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
       setImagen("");
       onClose();
     } catch (err) {
-      // Captura y muestra el mensaje de error
       setErrorMsg(err?.message || "Validación inválida.");
     }
   };
@@ -159,7 +145,6 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
 
             <form onSubmit={handleSubmit} noValidate>
               <div className="row g-3 row-cols-1 row-cols-md-2">
-                {/* Código */}
                 <div className="col">
                   <label className="form-label">Código</label>
                   <input
@@ -174,7 +159,6 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
                   <div className="form-text">Mínimo 3 caracteres.</div>
                 </div>
 
-                {/* Nombre */}
                 <div className="col">
                   <label className="form-label">Nombre</label>
                   <input
@@ -188,7 +172,6 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
                   <div className="form-text">Máximo 100 caracteres.</div>
                 </div>
 
-                {/* Precio */}
                 <div className="col">
                   <label className="form-label">Precio</label>
                   <input
@@ -214,7 +197,6 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
                   <div className="form-text">Mínimo 0. Solo números enteros (sin decimales).</div>
                 </div>
 
-                {/* Stock actual */}
                 <div className="col">
                   <label className="form-label">Stock</label>
                   <input
@@ -230,7 +212,6 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
                   <div className="form-text">Mínimo 0. Solo enteros.</div>
                 </div>
 
-                {/* Stock crítico (opcional) */}
                 <div className="col">
                   <label className="form-label">Stock crítico (opcional)</label>
                   <input
@@ -245,7 +226,6 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
                   <div className="form-text">Mínimo 0. Solo enteros.</div>
                 </div>
 
-                {/* Categoría */}
                 <div className="col">
                   <label className="form-label">Categoría</label>
                   <select
@@ -264,7 +244,6 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
                   </select>
                 </div>
 
-                {/* Descripción (opcional) - ocupa todo el ancho */}
                 <div className="col-12">
                   <label className="form-label">Descripción (opcional)</label>
                   <textarea
@@ -277,7 +256,6 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
                   <div className="form-text">Máximo 500 caracteres.</div>
                 </div>
 
-                {/* Imagen (opcional) - ocupa todo el ancho */}
                 <div className="col-12">
                   <label className="form-label">Imagen del producto (opcional)</label>
                   <input
@@ -294,7 +272,6 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
                 </div>
               </div>
 
-              {/* Footer fijo del formulario */}
               <div className="d-flex justify-content-end gap-2 mt-4">
                 <button type="submit" className="btn btn-primary">
                   {productoEditar ? "Actualizar" : "Registrar"}

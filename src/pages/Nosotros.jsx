@@ -9,7 +9,6 @@ const Nosotros = () => {
       <Navbar />
 
       <main className="container my-5 flex-grow-1">
-        {/* Sección Empresa */}
         <h2 className="text-center fw-bold mb-4">Sobre Nosotros</h2>
         <div className="row justify-content-center">
           <div className="col-md-8 text-center">
@@ -22,7 +21,6 @@ const Nosotros = () => {
           </div>
         </div>
 
-        {/* Imagen decorativa */}
         <div className="text-center my-4">
           <img 
             src= {letreromascotas} 
@@ -32,10 +30,8 @@ const Nosotros = () => {
           />
         </div>
 
-        {/* Sección Desarrolladores */}
         <h3 className="text-center fw-bold mt-5 mb-4">Nuestro Equipo</h3>
         <div className="row justify-content-center g-4">
-          {/* Desarrollador 1 */}
           <div className="col-md-5">
             <div className="card text-center shadow h-100">
               <div className="card-body">
@@ -47,7 +43,6 @@ const Nosotros = () => {
             </div>
           </div>
 
-          {/* Desarrollador 2 */}
           <div className="col-md-5">
             <div className="card text-center shadow h-100">
               <div className="card-body">

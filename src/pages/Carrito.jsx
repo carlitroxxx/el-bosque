@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../componentes/Navbar";
 import Footer from "../componentes/Footer";
 
-// Agrupa por codigo y suma cantidad (sin tocar otros campos)
 const normalizarCarrito = (items = []) => {
   const map = new Map();
   for (const it of items) {
