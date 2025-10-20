@@ -1,82 +1,102 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useEffect, useState } from "react";
 import Sidebar from "../../componentes/SideBar";
 import Tabla from "../../componentes/Tabla";
 import ModalUsuario from "../../componentes/ModalUsuario";
 
-const Usuarios = () => {
+
+export default function Usuarios() {
   const [usuarios, setUsuarios] = useState([]);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [usuarioEditar, setUsuarioEditar] = useState(null);
+  const [usuarioSesion, setUsuarioSesion] = useState(null);
 
-  // Sembrar un admin si no hay usuarios guardados
   useEffect(() => {
+    // cargar usuarios
     const stored = JSON.parse(localStorage.getItem("usuarios")) || [];
     if (stored.length === 0) {
       const admin = {
         nombre: "admin",
         correo: "admin@ejemplo.cl",
-        contrasena: "admin123", // demo
+        contrasena: "admin123",
         telefono: "000000000",
-        region: "Los Lagos",
+        region: "x",
         comuna: "Puerto Montt",
         rol: "ADMINISTRADOR",
+        rut: "11.111.111-1",
       };
-      const initial = [admin];
-      localStorage.setItem("usuarios", JSON.stringify(initial));
-      setUsuarios(initial);
+      localStorage.setItem("usuarios", JSON.stringify([admin]));
+      setUsuarios([admin]);
     } else {
       setUsuarios(stored);
     }
+
+    // cargar sesión
+    const sesion = JSON.parse(localStorage.getItem("sesion") || "null");
+    setUsuarioSesion(sesion);
   }, []);
 
-  // Crear/Editar usuario usando el correo como identificador único
   const guardarUsuario = (usuario) => {
-    let updated = [...usuarios];
+    const updated = [...usuarios];
 
-    if (usuarioEditar) {
-      const correoCambiado = usuario.correo !== usuarioEditar.correo;
-      if (correoCambiado && updated.some((u) => u.correo === usuario.correo)) {
-        alert("Ya existe un usuario con ese correo.");
-        return;
-      }
-      // Si no trae rol (por seguridad), dejarlo como estaba o CLIENTE por defecto
-      const rolFinal = usuario.rol || usuarios.find(u => u.correo === usuarioEditar.correo)?.rol || "CLIENTE";
-      updated = updated.map((u) =>
-        u.correo === usuarioEditar.correo ? { ...u, ...usuario, rol: rolFinal } : u
-      );
-    } else {
-      if (updated.some((u) => u.correo === usuario.correo)) {
-        alert("Ya existe un usuario con ese correo.");
-        return;
-      }
-      // Asegurar rol CLIENTE por defecto
-      updated.push({ ...usuario, rol: "CLIENTE" });
+    const yaExisteOtro = updated.some(u => u.correo === usuario.correo && (!usuarioEditar || u.correo !== usuarioEditar.correo));
+    if (yaExisteOtro) {
+      alert("Ya existe un usuario con ese correo.");
+      return;
     }
 
-    setUsuarios(updated);
-    localStorage.setItem("usuarios", JSON.stringify(updated));
-    setModalAbierto(false);
-    setUsuarioEditar(null);
+    if (usuarioEditar) {
+      const anterior = updated.find(u => u.correo === usuarioEditar.correo);
+      const rolFinal = usuario.rol || anterior?.rol || "CLIENTE";
+
+      if (usuarioSesion && usuarioSesion.correo === usuarioEditar.correo) {
+        alert("No puedes editar tu propio usuario desde esta vista.");
+        setModalAbierto(false);
+        setUsuarioEditar(null);
+        return;
+      }
+
+      const nuevo = updated.map(u => u.correo === usuarioEditar.correo ? { ...u, ...usuario, rol: rolFinal } : u);
+      setUsuarios(nuevo);
+      localStorage.setItem("usuarios", JSON.stringify(nuevo));
+      setModalAbierto(false);
+      setUsuarioEditar(null);
+    } else {
+      const crear = [...updated, { ...usuario, rol: usuario.rol || "CLIENTE" }];
+      setUsuarios(crear);
+      localStorage.setItem("usuarios", JSON.stringify(crear));
+      setModalAbierto(false);
+    }
   };
 
-  // Eliminar por correo
   const eliminarUsuario = (correo) => {
-    const updated = usuarios.filter((u) => u.correo !== correo);
-    setUsuarios(updated);
-    localStorage.setItem("usuarios", JSON.stringify(updated));
+    if (!correo) return;
+    if (usuarioSesion && usuarioSesion.correo === correo) {
+      alert("No puedes eliminar el usuario de la sesión actual.");
+      return;
+    }
+    if (!window.confirm("¿Eliminar este usuario?")) return;
+
+    const nuevo = usuarios.filter(u => u.correo !== correo);
+    setUsuarios(nuevo);
+    localStorage.setItem("usuarios", JSON.stringify(nuevo));
   };
 
   const editarUsuario = (usuario) => {
+    if (usuarioSesion && usuarioSesion.correo === usuario.correo) {
+      alert("No puedes editar el usuario de la sesión actual desde esta vista.");
+      return;
+    }
     setUsuarioEditar(usuario);
     setModalAbierto(true);
   };
 
   const columnas = [
-    { header: "NOMBRE COMPLETO", field: "nombre" },
+    { header: "NOMBRE", field: "nombre" },
     { header: "CORREO", field: "correo" },
-    { header: "CONTRASEÑA", field: "contrasena" },
-    { header: "TELEFONO", field: "telefono" },
-    { header: "REGION", field: "region" },
+    { header: "RUT", field: "rut" },
+    { header: "TELÉFONO", field: "telefono" },
+    { header: "REGIÓN", field: "region" },
     { header: "COMUNA", field: "comuna" },
     { header: "ROL", field: "rol" },
   ];
@@ -104,7 +124,8 @@ const Usuarios = () => {
               columns={columnas}
               data={usuarios}
               onEditar={editarUsuario}
-              onEliminar={eliminarUsuario} // que pase row.correo
+              onEliminar={(row) => eliminarUsuario(row?.correo)}
+              acciones
             />
           </div>
         </div>
@@ -118,6 +139,4 @@ const Usuarios = () => {
       />
     </div>
   );
-};
-
-export default Usuarios;
+}

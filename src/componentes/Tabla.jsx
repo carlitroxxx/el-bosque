@@ -20,7 +20,7 @@ const Tabla = ({ columns, data, onEditar, onEliminar }) => {
           </tr>
         ) : (
           data.map((row, i) => (
-            <tr key={i}>
+            <tr key={row.correo || i}>
               {columns.map((col, j) => (
                 <td key={j}>{row[col.field]}</td>
               ))}
@@ -33,7 +33,7 @@ const Tabla = ({ columns, data, onEditar, onEliminar }) => {
                 </button>
                 <button
                   className="btn btn-sm btn-danger"
-                  onClick={() => onEliminar && onEliminar(row.id)}
+                  onClick={() => onEliminar && onEliminar(row)}
                 >
                   Eliminar
                 </button>

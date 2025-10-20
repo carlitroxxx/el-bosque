@@ -2,7 +2,7 @@ export function correoPermitido(correo) {
   if (typeof correo !== "string") return false;
   const c = correo.trim();
   if (c.length === 0 || c.length > 100) return false;
-  return /^[A-Za-z0-9._%+-]+@(duoc\.cl|profesor\.duoc\.cl|gmail\.com)$/i.test(c);
+  return /^[A-Za-z0-9._%+-]+@(duoc\.cl|profesor\.duoc\.cl|gmail\.com)$/.test(c);
 }
 
 export function contrasenaValida(pass) {
