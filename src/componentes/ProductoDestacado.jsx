@@ -3,7 +3,7 @@ import React from "react";
 const ProductoDestacado = ({ producto, nombre, descripcion }) => {
   const rutaImagen = producto.imagen
     ? require(`../assets/images/${producto.imagen}`)
-    : require(`../assets/images/producto1.jpg`);
+    : require(`../assets/images/logo_mercado.jpg`);
   return (
     <div className="card text-center rounded-3 border-0 shadow-sm">
       <img
@@ -12,7 +12,7 @@ const ProductoDestacado = ({ producto, nombre, descripcion }) => {
         alt={nombre}
         style={{ height: "180px", objectFit: "cover" }}
         onError={(e) => {
-            e.target.src = "../assets/images/producto1.jpg"; 
+            e.target.src = "../assets/images/logo_mercado.jpg"; 
           }}      
         />
       <div className="card-body">

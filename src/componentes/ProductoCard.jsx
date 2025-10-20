@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 const ProductoCard = ({ producto, onAgregar }) => {
   const rutaImagen = producto.imagen
     ? require(`../assets/images/${producto.imagen}`)
-    : require(`../assets/images/producto1.jpg`);
+    : require(`../assets/images/logo_mercado.jpg`);
 
   return (
     <div className="col-md-3 mb-4">
@@ -14,7 +14,7 @@ const ProductoCard = ({ producto, onAgregar }) => {
           className="card-img-top"
           alt={producto.nombre}
           onError={(e) => {
-            e.target.src = "../assets/images/producto1.jpg"; 
+            e.target.src = "../assets/images/logo_mercado.jpg"; 
           }}
         />
         <div className="card-body text-center">

@@ -41,7 +41,7 @@ export default function ProductoDetalle() {
 
   const rutaImagen = producto && producto.imagen
     ? require(`../assets/images/${producto.imagen}`)
-    : require(`../assets/images/producto1.jpg`);
+    : require(`../assets/images/logo_mercado.jpg`);
 
   if (!producto) {
     return (
@@ -186,11 +186,9 @@ export default function ProductoDetalle() {
                   >
                     <img
                       src={
-                        (p.imagenes && p.imagenes[0]) ||
-                        p.imagen ||
-                        p.urlImagen ||
-                        "/images/img/producto1.jpg"
+                        p && p.imagen ? require(`../assets/images/${p.imagen}`) : require(`../assets/images/logo_mercado.jpg`)
                       }
+                      
                       className="card-img-top"
                       alt={p.nombre || "Producto"}
                       style={{ objectFit: "cover", height: 160 }}
