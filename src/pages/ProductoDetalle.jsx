@@ -38,9 +38,11 @@ export default function ProductoDetalle() {
     () => productos.find(p => String(p.id) === String(id)),
     [id, productos]
   );
-  const rutaImagen = producto.imagen
-      ? require(`../assets/images/${producto.imagen}`)
-      : require(`../assets/images/producto1.jpg`);
+
+  const rutaImagen = producto && producto.imagen
+    ? require(`../assets/images/${producto.imagen}`)
+    : require(`../assets/images/producto1.jpg`);
+
   if (!producto) {
     return (
       <>
@@ -59,8 +61,6 @@ export default function ProductoDetalle() {
       </>
     );
   }
-
-
 
   const relacionados = productos
     .filter(p => p.id !== producto.id)
@@ -99,7 +99,6 @@ export default function ProductoDetalle() {
     }
     guardarCarrito(carrito);
     alert("Producto añadido al carrito.");
-    // Navega al carrito si quieres:
     // navigate("/carrito");
   }
 
@@ -107,7 +106,6 @@ export default function ProductoDetalle() {
     <>
       <Navbar />
       <div className="container mt-4">
-
         <nav aria-label="breadcrumb">
           <ol className="breadcrumb">
             <li className="breadcrumb-item">
@@ -119,50 +117,64 @@ export default function ProductoDetalle() {
           </ol>
         </nav>
 
-        <div className="row">
+        <div className="row g-4">
+          {/* Imagen */}
           <div className="col-md-6">
             <img
               src={rutaImagen}
-              className="img-fluid border mb-3"
+              className="img-fluid border rounded-3"
               alt={producto.nombre || "Producto"}
             />
-            
           </div>
 
+          {/* ======= CARD DERECHA CON BORDE ======= */}
           <div className="col-md-6">
-            <h3>{producto.nombre || "Nombre de producto"}</h3>
-            <h4 className="text-primary mb-3">
-              {typeof producto.precio === "number"
-                ? `$${producto.precio.toLocaleString("es-CL")}`
-                : "$0"}
-            </h4>
+            <div className="card border rounded-3 shadow-sm h-100">
+              <div className="card-body">
+                <h3 className="card-title">{producto.nombre || "Nombre de producto"}</h3>
+                <h4 className="text-primary mb-3">
+                  ${Number(producto.precio).toLocaleString("es-CL")}
+                </h4>
 
-            <p className="mb-4">
-              {producto.descripcion ||
-                "Descripción no disponible para este producto."}
-            </p>
+                <p className="mb-4 text-secondary">
+                  {producto.descripcion || "Descripción no disponible para este producto."}
+                </p>
 
-            <div className="mb-3">
-              <label htmlFor="cantidad" className="form-label">Cantidad</label>
-              <input
-                type="number"
-                id="cantidad"
-                className="form-control w-25"
-                value={cantidad}
-                min={1}
-                onChange={onCambiarCantidad}
-              />
-              {typeof producto.stock === "number" && (
-                <small className="text-muted d-block mt-1">
-                  Stock disponible: {producto.stock}
-                </small>
-              )}
+                {/* ======= CANTIDAD COMO INPUT-GROUP (solo visual) ======= */}
+                <div className="mb-3">
+                  <label htmlFor="cantidad" className="form-label">Cantidad</label>
+                  <div className="input-group" style={{ maxWidth: 260 }}>
+                    <span className="input-group-text">
+                      <i className="bi bi-basket"></i>
+                    </span>
+                    <input
+                      type="number"
+                      id="cantidad"
+                      className="form-control text-center"
+                      value={cantidad}
+                      min={1}
+                      onChange={onCambiarCantidad}
+                    />
+                  </div>
+                  {typeof producto.stock === "number" && (
+                    <small className="text-muted d-block mt-1">
+                      Stock disponible: {producto.stock}
+                    </small>
+                  )}
+                </div>
+
+                {/* ======= BOTÓN MEJORADO "AÑADIR AL CARRITO" ======= */}
+                <button
+                  className="btn btn-primary btn-lg w-100 shadow-sm rounded-3 d-flex align-items-center justify-content-center gap-2"
+                  onClick={agregarAlCarrito}
+                >
+                  <i className="bi bi-cart-plus"></i>
+                  <span>Añadir al carrito</span>
+                </button>
+              </div>
             </div>
-
-            <button className="btn btn-primary btn-lg w-100" onClick={agregarAlCarrito}>
-              Añadir al carrito
-            </button>
           </div>
+          {/* ====================================== */}
         </div>
 
         {relacionados.length > 0 && (
@@ -172,7 +184,7 @@ export default function ProductoDetalle() {
               {relacionados.map((p) => (
                 <div key={p.id} className="col-md-3 col-6 mb-3">
                   <div
-                    className="card h-100"
+                    className="card h-100 shadow-sm"
                     role="button"
                     onClick={() => navigate(`/producto/${p.id}`)}
                   >

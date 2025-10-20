@@ -20,7 +20,7 @@ const ProductoCard = ({ producto, onAgregar }) => {
         />
         <div className="card-body text-center">
           <h5 className="card-title">{producto.nombre}</h5>
-          <p className="card-text">${producto.precio}</p>
+          <p className="card-text">${Number(producto.precio).toLocaleString("es-CL")}</p>
           <button
             className="btn btn-primary w-100 mb-2"
             onClick={() => onAgregar && onAgregar(producto)}
