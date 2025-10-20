@@ -11,6 +11,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const nav = useNavigate();
   const loc = useLocation();
+  const volverA = loc.state?.from?.pathname || "/";
 
   const onChange = (e) => setForm({ ...form, [e.target.id]: e.target.value });
 
@@ -18,14 +19,15 @@ export default function Login() {
     e.preventDefault();
     setError("");
     try {
+      // --- lógica original (CÓDIGO 1) ---
       iniciarSesion(form);
-      const sesion = sesionActual();
-      const usuario = sesion?.logeado ? buscarUsuarioPorCorreo(sesion.correo) : null;
+      const ses = sesionActual();
+      const u = ses?.logeado ? buscarUsuarioPorCorreo(ses.correo) : null;
 
-      if (usuario?.rol === "admin") {
+      if (u?.rol === "admin") {
         nav("/dashboard", { replace: true });
       } else {
-        nav("/", { replace: true });
+        nav(volverA, { replace: true });
       }
     } catch (err) {
       setError(err.message || "No fue posible iniciar sesión.");
@@ -35,9 +37,12 @@ export default function Login() {
   return (
     <div className="d-flex flex-column min-vh-100">
       <Navbar />
+
       <main className="d-flex justify-content-center align-items-center bg-light flex-grow-1 py-5">
         <div className="card shadow" style={{ maxWidth: 420, width: "100%" }}>
           <div className="card-body p-4">
+
+            {/* Logo + nombre tienda */}
             <div className="text-center mb-3">
               <img
                 src={logo}
@@ -50,12 +55,14 @@ export default function Login() {
 
             <h4 className="text-center mb-3">Inicio de sesión</h4>
 
+            {/* Alert de error (si corresponde) */}
             {error && (
               <div className="alert alert-danger py-2" role="alert">
                 {error}
               </div>
             )}
 
+            {/* Formulario */}
             <form onSubmit={onSubmit} noValidate>
               <div className="mb-3">
                 <label htmlFor="correo" className="form-label fw-semibold small text-uppercase">

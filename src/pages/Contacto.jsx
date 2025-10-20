@@ -2,11 +2,8 @@ import React, { useState } from "react";
 import Navbar from "../componentes/Navbar";
 import Footer from "../componentes/Footer";
 import logo from "../assets/images/logo_mercado.jpg";
-import { mensajesContacto } from "../lib/auth";
 
 const Contacto = () => {
-  const [error, setError] = useState("");
-  
   const [formData, setFormData] = useState({
     nombre: "",
     correo: "",
@@ -23,22 +20,16 @@ const Contacto = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setError("");
-    try{
-      //funcion para guardar
-      mensajesContacto(formData)
-      alert("Mensaje enviado correctamente");
-      setFormData({
-        nombre: "",
-        correo: "",
-        contenido: ""
-      });
-    }catch(err){
-      setError(err.message || "No fue posible enviar el mensaje, intentalo más tarde...")
-    }
+    // Aquí puedes agregar la lógica para enviar el formulario
+    console.log("Datos del formulario:", formData);
+    alert("Mensaje enviado correctamente");
     
-    
-    
+    // Limpiar formulario
+    setFormData({
+      nombre: "",
+      correo: "",
+      contenido: ""
+    });
   };
 
   return (
@@ -68,11 +59,6 @@ const Contacto = () => {
                 FORMULARIO DE CONTACTOS
               </div>
               <div className="card-body bg-light">
-                {error && (
-                  <div className="alert alert-danger py-2" role="alert">
-                    {error}
-                  </div>
-                )}
                 <form onSubmit={handleSubmit}>
                   {/* Nombre completo */}
                   <div className="mb-3">
@@ -92,6 +78,7 @@ const Contacto = () => {
                   <div className="mb-3">
                     <label htmlFor="correo" className="form-label fw-semibold">Correo</label>
                     <input 
+                      type="email" 
                       className="form-control" 
                       id="correo" 
                       value={formData.correo}
