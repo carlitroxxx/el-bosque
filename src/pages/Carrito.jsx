@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Navbar from "../componentes/Navbar";
 import Footer from "../componentes/Footer";
 
@@ -18,8 +18,21 @@ const normalizarCarrito = (items = []) => {
   return Array.from(map.values());
 };
 
+
+function leerProductos() {
+  try {
+    const raw = localStorage.getItem("productos");
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
 const Carrito = () => {
   const [carrito, setCarrito] = useState([]);
+
+  const productos = useMemo(() => leerProductos(), []);
 
   useEffect(() => {
     const guardado = JSON.parse(localStorage.getItem("carrito")) || [];
@@ -40,6 +53,11 @@ const Carrito = () => {
 
   const actualizarCantidad = (id, nuevaCantidad) => {
     if (nuevaCantidad < 1) return;
+    const productoOriginal = productos.find(p => String(p.id) === String(id));
+    if (productoOriginal && typeof productoOriginal.stock === 'number' && nuevaCantidad > productoOriginal.stock) {
+        alert(`No puedes agregar más. Stock disponible: ${productoOriginal.stock}.`);
+        return;
+    }
     const nuevo = carrito.map((p) =>
       p.id === id ? { ...p, cantidad: nuevaCantidad } : p
     );
@@ -54,6 +72,16 @@ const Carrito = () => {
 
   const vaciarCarrito = () => {
     setYGuardar([]);
+  };
+
+  const finalizarCompra = () => {
+    if (carrito.length === 0) {
+      alert("Tu carrito está vacío. Añade productos antes de comprar.");
+      return;
+    }
+    // En un futuro, aquí se conectaría con una pasarela de pago.
+    alert("¡Compra realizada con éxito!");
+    vaciarCarrito(); // Limpiamos el carrito
   };
 
   return (
@@ -146,6 +174,7 @@ const Carrito = () => {
                                       (producto.cantidad || 1) + 1
                                     )
                                   }
+                                  disabled={(producto.cantidad || 1) >= (productos.find(p => p.id === producto.id)?.stock || Infinity)}
                                 >
                                   +
                                 </button>
@@ -183,7 +212,9 @@ const Carrito = () => {
                       >
                         Vaciar carrito
                       </button>
-                      <button className="btn btn-success">Comprar ahora</button>
+                      <button className="btn btn-success" onClick={finalizarCompra}>
+                        Comprar ahora
+                      </button>
                     </div>
                   </>
                 )}
