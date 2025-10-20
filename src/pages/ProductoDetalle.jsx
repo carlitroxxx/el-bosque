@@ -109,7 +109,7 @@ export default function ProductoDetalle() {
         <nav aria-label="breadcrumb">
           <ol className="breadcrumb">
             <li className="breadcrumb-item">
-              <Link to="/productos">Productos</Link>
+              <Link to="/catalogo">Productos</Link>
             </li>
             <li className="breadcrumb-item active" aria-current="page">
               Detalle Producto

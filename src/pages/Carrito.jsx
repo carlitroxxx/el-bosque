@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Navbar from "../componentes/Navbar";
 import Footer from "../componentes/Footer";
+import { regiones } from "../datos/regiones-comunas";
+import { useNavigate } from 'react-router-dom';
 
 const normalizarCarrito = (items = []) => {
   const map = new Map();
@@ -17,14 +19,40 @@ const normalizarCarrito = (items = []) => {
   return Array.from(map.values());
 };
 
+
+function leerProductos() {
+  try {
+    const raw = localStorage.getItem("productos");
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
 const Carrito = () => {
+  const navigate = useNavigate();
   const [carrito, setCarrito] = useState([]);
+  const productos = useMemo(() => leerProductos(), []);
+
+  const [datosEnvio, setDatosEnvio] = useState({
+    nombre: "",
+    email: "",
+    telefono: "",
+    region: "",
+    comuna: "",
+    direccion: "",
+  });
+  const [comunas, setComunas] = useState([]);
+  
 
   useEffect(() => {
     const guardado = JSON.parse(localStorage.getItem("carrito")) || [];
     const normalizado = normalizarCarrito(guardado);
     setCarrito(normalizado);
-    localStorage.setItem("carrito", JSON.stringify(normalizado));
+    if(normalizado.length > 0) {
+      localStorage.setItem("carrito", JSON.stringify(normalizado));
+    }
   }, []);
 
   const setYGuardar = (items) => {
@@ -39,6 +67,11 @@ const Carrito = () => {
 
   const actualizarCantidad = (codigo, nuevaCantidad) => {
     if (nuevaCantidad < 1) return;
+    const productoOriginal = productos.find(p => String(p.id) === String(id));
+    if (productoOriginal && typeof productoOriginal.stock === 'number' && nuevaCantidad > productoOriginal.stock) {
+        alert(`No puedes agregar más. Stock disponible: ${productoOriginal.stock}.`);
+        return;
+    }
     const nuevo = carrito.map((p) =>
       p.codigo === codigo ? { ...p, cantidad: nuevaCantidad } : p
     );
@@ -55,6 +88,63 @@ const Carrito = () => {
     setYGuardar([]);
   };
 
+  const handleDatosEnvioChange = (e) => {
+    setDatosEnvio({ ...datosEnvio, [e.target.name]: e.target.value });
+  };
+
+  const handleRegionChange = (e) => {
+    const nombreRegion = e.target.value;
+    setDatosEnvio({ ...datosEnvio, region: nombreRegion, comuna: "" });
+    const regionEncontrada = regiones.find(r => r.nombre === nombreRegion);
+    setComunas(regionEncontrada ? regionEncontrada.comunas : []);
+  };
+
+  const finalizarCompra = (e) => {
+    e.preventDefault();
+    if (carrito.length === 0) {
+      alert("Tu carrito está vacío.");
+      return;
+    }
+    for (const key in datosEnvio) {
+      if (datosEnvio[key] === "") {
+        alert(`Por favor, complete el campo: ${key}`);
+        return;
+      }
+    }
+
+    const ordenData = {
+      productos: carrito,
+      total: calcularTotal(),
+      datosEnvio: datosEnvio,
+    };
+
+    
+    if (datosEnvio.nombre.toLowerCase().includes("error")) {
+      console.log("Simulando pago fallido...");
+      navigate('/pagofallido', { state: { orden: ordenData } });
+      return;
+    }
+    
+  
+    console.log("Procesando pago exitoso...");
+    
+  
+    const ordenesGuardadas = JSON.parse(localStorage.getItem("ordenes")) || [];
+    const nuevaOrden = {
+        ...ordenData,
+        id: Date.now(), 
+        fecha: new Date().toISOString(), 
+    };
+    ordenesGuardadas.push(nuevaOrden);
+    localStorage.setItem("ordenes", JSON.stringify(ordenesGuardadas));
+   
+
+    navigate('/confirmacioncompra', { state: { orden: nuevaOrden } });
+    
+  
+    vaciarCarrito();
+    setDatosEnvio({ nombre: "", email: "", telefono: "", region: "", comuna: "", direccion: "" });
+  };
   return (
     <div className="d-flex flex-column min-vh-100">
       <Navbar />
@@ -145,6 +235,7 @@ const Carrito = () => {
                                       (producto.cantidad || 1) + 1
                                     )
                                   }
+                                  disabled={(producto.cantidad || 1) >= (productos.find(p => p.id === producto.id)?.stock || Infinity)}
                                 >
                                   +
                                 </button>
@@ -182,7 +273,6 @@ const Carrito = () => {
                       >
                         Vaciar carrito
                       </button>
-                      <button className="btn btn-success">Comprar ahora</button>
                     </div>
                   </>
                 )}
@@ -190,8 +280,53 @@ const Carrito = () => {
             </div>
           </div>
         </div>
-      </main>
 
+        <hr className="my-5" />
+
+        {carrito.length > 0 && (
+            <div className="row justify-content-center">
+                <div className="col-lg-8">
+                    <h3 className="fw-bold mb-4">Dirección de Despacho</h3>
+                    <form onSubmit={finalizarCompra} noValidate>
+                    <div className="row g-3">
+                        <div className="col-12">
+                        <label htmlFor="nombre" className="form-label">Nombre Completo</label>
+                        <input type="text" className="form-control" id="nombre" name="nombre" value={datosEnvio.nombre} onChange={handleDatosEnvioChange} required />
+                        </div>
+                        <div className="col-12">
+                        <label htmlFor="email" className="form-label">Email</label>
+                        <input type="email" className="form-control" id="email" name="email" value={datosEnvio.email} onChange={handleDatosEnvioChange} required />
+                        </div>
+                        <div className="col-12">
+                        <label htmlFor="telefono" className="form-label">Teléfono</label>
+                        <input type="tel" className="form-control" id="telefono" name="telefono" value={datosEnvio.telefono} onChange={handleDatosEnvioChange} required />
+                        </div>
+                        <div className="col-12">
+                        <label htmlFor="region" className="form-label">Región</label>
+                        <select className="form-select" id="region" name="region" value={datosEnvio.region} onChange={handleRegionChange} required>
+                            <option value="">Seleccionar...</option>
+                            {regiones.map(r => <option key={r.nombre} value={r.nombre}>{r.nombre}</option>)}
+                        </select>
+                        </div>
+                        <div className="col-12">
+                        <label htmlFor="comuna" className="form-label">Comuna</label>
+                        <select className="form-select" id="comuna" name="comuna" value={datosEnvio.comuna} onChange={handleDatosEnvioChange} required disabled={!datosEnvio.region}>
+                            <option value="">Seleccionar...</option>
+                            {comunas.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                        </div>
+                        <div className="col-12">
+                        <label htmlFor="direccion" className="form-label">Dirección</label>
+                        <input type="text" className="form-control" id="direccion" name="direccion" value={datosEnvio.direccion} onChange={handleDatosEnvioChange} required placeholder="Calle, Número, Depto/Casa" />
+                        </div>
+                    </div>
+                    <hr className="my-4" />
+                    <button className="w-100 btn btn-success btn-lg" type="submit">Finalizar Compra</button>
+                    </form>
+                </div>
+            </div>
+        )}
+      </main>
       <Footer />
     </div>
   );

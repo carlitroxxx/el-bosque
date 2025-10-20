@@ -1,3 +1,4 @@
+// src/pages/Registro.jsx
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../componentes/Navbar";
@@ -16,7 +17,6 @@ export default function Registro() {
     telefono: "",
     region: "",
     comuna: "",
-    rut: "",
   });
   const [error, setError] = useState("");
   const [comunas, setComunas] = useState([]);
@@ -25,15 +25,7 @@ export default function Registro() {
 
   const onChange = (e) => {
     const { id, value } = e.target;
-
-    if (id === "rut") {
-      const limpio = limpiarRUN(value);
-      setF({ ...f, rut: limpio });
-      return;
-    }
-
     setF({ ...f, [id]: value });
-
     if (id === "region") {
       setComunas(comunasPorRegion(value));
       setF((prev) => ({ ...prev, comuna: "" }));
@@ -49,11 +41,6 @@ export default function Registro() {
       return;
     }
 
-    if (!runValido(f.rut)) {
-      setError("El RUT ingresado no es válido. Verifica el dígito verificador.");
-      return;
-    }
-
     try {
       const u = registrarUsuario({
         correo: f.correo,
@@ -62,7 +49,6 @@ export default function Registro() {
         telefono: f.telefono,
         region: f.region,
         comuna: f.comuna,
-        rut: f.rut,
       });
       guardarSesion(u); // autologin
       nav("/", { replace: true });
@@ -79,6 +65,7 @@ export default function Registro() {
         <div className="card shadow" style={{ maxWidth: 520, width: "100%" }}>
           <div className="card-body p-4">
 
+            {/* Logo + nombre tienda */}
             <div className="text-center mb-3">
               <img
                 src={logo}
@@ -91,12 +78,14 @@ export default function Registro() {
 
             <h4 className="text-center mb-3">Crear cuenta</h4>
 
+            {/* Error */}
             {error && (
               <div className="alert alert-danger py-2 mb-3" role="alert">
                 {error}
               </div>
             )}
 
+            {/* Formulario (compacto) */}
             <form onSubmit={onSubmit} noValidate>
               <div className="row g-2">
                 <div className="col-md-6">
@@ -125,34 +114,6 @@ export default function Registro() {
                 </div>
 
                 <div className="col-md-6">
-                  <label htmlFor="rut" className="form-label fw-semibold small text-uppercase">RUT</label>
-                  <input
-                    id="rut"
-                    className="form-control form-control-sm"
-                    value={f.rut}
-                    onChange={onChange}
-                    required
-                    placeholder="12345678K"
-                    inputMode="text"
-                    autoComplete="off"
-                  />
-                  <div className="form-text">
-                    Ingresa tu RUT sin puntos y sin guion.
-                  </div>
-                </div>
-
-                <div className="col-md-6">
-                  <label htmlFor="telefono" className="form-label fw-semibold small text-uppercase">Teléfono</label>
-                  <input
-                    id="telefono"
-                    className="form-control form-control-sm"
-                    value={f.telefono}
-                    onChange={onChange}
-                    placeholder="+56 9 ..."
-                  />
-                </div>
-
-                <div className="col-md-6">
                   <label htmlFor="contrasena" className="form-label fw-semibold small text-uppercase">Contraseña</label>
                   <input
                     id="contrasena"
@@ -175,6 +136,17 @@ export default function Registro() {
                     onChange={onChange}
                     required
                     placeholder="********"
+                  />
+                </div>
+
+                <div className="col-md-4">
+                  <label htmlFor="telefono" className="form-label fw-semibold small text-uppercase">Teléfono</label>
+                  <input
+                    id="telefono"
+                    className="form-control form-control-sm"
+                    value={f.telefono}
+                    onChange={onChange}
+                    placeholder="+56 9 ..."
                   />
                 </div>
 
