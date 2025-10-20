@@ -2,11 +2,11 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../componentes/Navbar";
 import Footer from "../componentes/Footer";
 
-// Agrupa por id y suma cantidad (sin tocar otros campos)
+// Agrupa por codigo y suma cantidad (sin tocar otros campos)
 const normalizarCarrito = (items = []) => {
   const map = new Map();
   for (const it of items) {
-    const key = it.id;
+    const key = it.codigo;
     const cant = Number(it.cantidad) || 1;
     if (map.has(key)) {
       const prev = map.get(key);
@@ -34,14 +34,14 @@ const Carrito = () => {
     localStorage.setItem("carrito", JSON.stringify(normalizado));
   };
 
-  const eliminarDelCarrito = (id) => {
-    setYGuardar(carrito.filter((p) => p.id !== id));
+  const eliminarDelCarrito = (codigo) => {
+    setYGuardar(carrito.filter((p) => p.codigo !== codigo));
   };
 
-  const actualizarCantidad = (id, nuevaCantidad) => {
+  const actualizarCantidad = (codigo, nuevaCantidad) => {
     if (nuevaCantidad < 1) return;
     const nuevo = carrito.map((p) =>
-      p.id === id ? { ...p, cantidad: nuevaCantidad } : p
+      p.codigo === codigo ? { ...p, cantidad: nuevaCantidad } : p
     );
     setYGuardar(nuevo);
   };
@@ -68,7 +68,7 @@ const Carrito = () => {
 
             <div className="row row-cols-1 row-cols-md-3 g-4">
               {carrito.map((producto) => (
-                <div key={producto.id} className="col">
+                <div key={producto.codigo} className="col">
                   <div className="card h-100 shadow-sm text-center">
                     <img
                       src={producto.imagen}
@@ -88,7 +88,7 @@ const Carrito = () => {
                       </p>
                       <button
                         className="btn btn-outline-dark btn-sm"
-                        onClick={() => eliminarDelCarrito(producto.id)}
+                        onClick={() => eliminarDelCarrito(producto.codigo)}
                       >
                         Quitar
                       </button>
@@ -119,7 +119,7 @@ const Carrito = () => {
                       </thead>
                       <tbody>
                         {carrito.map((producto) => (
-                          <tr key={producto.id}>
+                          <tr key={producto.codigo}>
                             <td>{producto.nombre}</td>
                             <td>
                               <div className="d-flex align-items-center">
@@ -127,7 +127,7 @@ const Carrito = () => {
                                   className="btn btn-outline-secondary btn-sm"
                                   onClick={() =>
                                     actualizarCantidad(
-                                      producto.id,
+                                      producto.codigo,
                                       (producto.cantidad || 1) - 1
                                     )
                                   }
@@ -142,7 +142,7 @@ const Carrito = () => {
                                   className="btn btn-outline-secondary btn-sm"
                                   onClick={() =>
                                     actualizarCantidad(
-                                      producto.id,
+                                      producto.codigo,
                                       (producto.cantidad || 1) + 1
                                     )
                                   }
@@ -160,7 +160,7 @@ const Carrito = () => {
                             <td>
                               <button
                                 className="btn btn-sm btn-outline-danger"
-                                onClick={() => eliminarDelCarrito(producto.id)}
+                                onClick={() => eliminarDelCarrito(producto.codigo)}
                               >
                                 <i className="bi bi-trash"></i>
                               </button>

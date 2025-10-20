@@ -48,7 +48,7 @@ export default function Rutas() {
       <Route path="/detalle2" element={<Detalle2 />} />
       <Route path="/contacto" element={<Contacto />} />
       <Route path="/carrito" element={<Carrito />} />
-      <Route path="/producto/:id" element={<ProductoDetalle />} />
+      <Route path="/producto/:codigo" element={<ProductoDetalle />} />
       <Route path="/login" element={<Login />} />
       <Route path="/registro" element={<Registro />} />
 

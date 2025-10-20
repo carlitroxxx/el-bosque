@@ -25,9 +25,10 @@ const Productos = () => {
     };
     let updated;
     if (productoEditar) {
-      updated = productos.map((p) => (p.id === productoEditar.id ? { ...p, ...normalizado } : p));
+      updated = productos.map((p) => (p.codigo === productoEditar.codigo ? { ...p, ...normalizado } : p));
     } else {
-      updated = [...productos, { id: productos.length + 1, ...normalizado }];
+      if (productos.some(p => String(p.codigo) === String(normalizado.codigo))) { alert("Ya existe un producto con ese código."); return; }
+      updated = [...productos, { ...normalizado }];
     }
     setProductos(updated);
     localStorage.setItem("productos", JSON.stringify(updated));
@@ -42,8 +43,8 @@ const Productos = () => {
     }
   };
 
-  const eliminarProducto = (id) => {
-    const updated = productos.filter((p) => p.id !== id);
+  const eliminarProducto = (row) => {
+    const updated = productos.filter((p) => p.codigo !== row.codigo);
     setProductos(updated);
     localStorage.setItem("productos", JSON.stringify(updated));
   };

@@ -28,15 +28,15 @@ function guardarCarrito(items) {
 }
 
 export default function ProductoDetalle() {
-  const { id } = useParams();
+  const { codigo } = useParams();
   const navigate = useNavigate();
   const [cantidad, setCantidad] = useState(1);
   const [mainImg, setMainImg] = useState(null);
 
   const productos = useMemo(() => leerProductos(), []);
   const producto = useMemo(
-    () => productos.find(p => String(p.id) === String(id)),
-    [id, productos]
+    () => productos.find(p => String(p.codigo) === String(codigo)),
+    [codigo, productos]
   );
 
   const rutaImagen = producto && producto.imagen
@@ -63,7 +63,7 @@ export default function ProductoDetalle() {
   }
 
   const relacionados = productos
-    .filter(p => p.id !== producto.id)
+    .filter(p => p.codigo !== producto.codigo)
     .slice(0, 4);
 
   function onCambiarCantidad(e) {
@@ -80,7 +80,7 @@ export default function ProductoDetalle() {
       return;
     }
 
-    const idx = carrito.findIndex(it => String(it.id) === String(producto.id));
+    const idx = carrito.findIndex(it => String(it.codigo) === String(producto.codigo));
     if (idx >= 0) {
       const posible = carrito[idx].cantidad + cant;
       if (typeof producto.stock === "number" && posible > producto.stock) {
@@ -90,7 +90,7 @@ export default function ProductoDetalle() {
       carrito[idx].cantidad = posible;
     } else {
       carrito.push({
-        id: producto.id,
+        codigo: producto.codigo,
         nombre: producto.nombre || "Producto",
         precio: Number(producto.precio) || 0,
         cantidad: cant,
@@ -182,11 +182,11 @@ export default function ProductoDetalle() {
             <h5>Productos relacionados</h5>
             <div className="row">
               {relacionados.map((p) => (
-                <div key={p.id} className="col-md-3 col-6 mb-3">
+                <div key={p.codigo} className="col-md-3 col-6 mb-3">
                   <div
                     className="card h-100 shadow-sm"
                     role="button"
-                    onClick={() => navigate(`/producto/${p.id}`)}
+                    onClick={() => navigate(`/producto/${p.codigo}`)}
                   >
                     <img
                       src={

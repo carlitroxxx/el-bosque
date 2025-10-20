@@ -29,7 +29,7 @@ const Catalogo = () => {
             <p className="text-center">No hay productos disponibles</p>
           ) : (
             productos.map((p) => (
-              <ProductoCard key={p.id} producto={p} onAgregar={agregarAlCarrito} />
+              <ProductoCard key={p.codigo} producto={p} onAgregar={agregarAlCarrito} />
             ))
           )}
         </div>
