@@ -14,20 +14,32 @@ const Productos = () => {
   }, []);
 
   const guardarProducto = (producto) => {
+    const normalizado = {
+      ...producto,
+      precio: Number(producto.precio),
+      stock: Number(producto.stock),
+      stockCritico:
+        producto.stockCritico === null || producto.stockCritico === "" || producto.stockCritico === undefined
+          ? null
+          : Number(producto.stockCritico),
+    };
     let updated;
     if (productoEditar) {
-      // Editar producto existente
-      updated = productos.map((p) =>
-        p.id === productoEditar.id ? { ...p, ...producto } : p
-      );
+      updated = productos.map((p) => (p.id === productoEditar.id ? { ...p, ...normalizado } : p));
     } else {
-      // Agregar nuevo producto
-      updated = [...productos, { id: productos.length + 1, ...producto }];
+      updated = [...productos, { id: productos.length + 1, ...normalizado }];
     }
     setProductos(updated);
     localStorage.setItem("productos", JSON.stringify(updated));
     setModalAbierto(false);
     setProductoEditar(null);
+    if (
+      normalizado.stockCritico !== null &&
+      Number.isFinite(normalizado.stockCritico) &&
+      normalizado.stock <= normalizado.stockCritico
+    ) {
+      alert("El stock actual es menor o igual al stock crítico.");
+    }
   };
 
   const eliminarProducto = (id) => {

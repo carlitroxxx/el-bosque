@@ -8,7 +8,10 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
   const [stock, setStock] = useState("");
   const [stockCritico, setStockCritico] = useState("");
   const [categoria, setCategoria] = useState("");
-  const [imagen, setImagen] = useState(""); // 🆕 nuevo campo para imagen
+  const [imagen, setImagen] = useState("");
+
+  // 🔴 div de error controlado
+  const [errorMsg, setErrorMsg] = useState("");
 
   // Precargar los campos si estamos editando
   useEffect(() => {
@@ -16,11 +19,24 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
       setCodigo(productoEditar.codigo || "");
       setNombre(productoEditar.nombre || "");
       setDescripcion(productoEditar.descripcion || "");
-      setPrecio(productoEditar.precio || "");
-      setStock(productoEditar.stock || "");
-      setStockCritico(productoEditar.stockCritico || "");
+      setPrecio(
+        productoEditar.precio !== undefined && productoEditar.precio !== null
+          ? String(productoEditar.precio)
+          : ""
+      );
+      setStock(
+        productoEditar.stock !== undefined && productoEditar.stock !== null
+          ? String(productoEditar.stock)
+          : ""
+      );
+      setStockCritico(
+        productoEditar.stockCritico !== undefined && productoEditar.stockCritico !== null
+          ? String(productoEditar.stockCritico)
+          : ""
+      );
       setCategoria(productoEditar.categoria || "");
-      setImagen(productoEditar.imagen || ""); // 🆕 precargar imagen
+      setImagen(productoEditar.imagen || "");
+      setErrorMsg("");
     } else {
       // Limpiar campos al abrir para crear
       setCodigo("");
@@ -31,54 +47,101 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
       setStockCritico("");
       setCategoria("");
       setImagen("");
+      setErrorMsg("");
     }
   }, [productoEditar, isOpen]);
 
+  // 🛡️ Validador central: lanza throw Error("...") en la primera regla que falle
+  const validar = () => {
+    const trim = (v) => (typeof v === "string" ? v.trim() : v);
+
+    // Código (texto, min 3, requerido)
+    if (!trim(codigo)) throw new Error("El código es obligatorio.");
+    if (trim(codigo).length < 3) throw new Error("El código debe tener al menos 3 caracteres.");
+
+    // Nombre (requerido, max 100)
+    if (!trim(nombre)) throw new Error("El nombre es obligatorio.");
+    if (trim(nombre).length > 100) throw new Error("El nombre no puede superar 100 caracteres.");
+
+    // Descripción (opcional, max 500)
+    if (trim(descripcion) && trim(descripcion).length > 500)
+      throw new Error("La descripción no puede superar 500 caracteres.");
+
+    // Precio (requerido, min 0, decimales permitidos)
+    if (trim(precio) === "" || precio === null) throw new Error("El precio es obligatorio.");
+    const precioNum = Number(precio);
+    if (!Number.isFinite(precioNum)) throw new Error("El precio debe ser un número.");
+    if (!Number.isInteger(precioNum)) throw new Error("El precio debe ser un número entero.");
+    if (precioNum < 0) throw new Error("El precio no puede ser negativo.");
+
+    // Stock (requerido, min 0, entero)
+    if (trim(stock) === "" || stock === null) throw new Error("El stock es obligatorio.");
+    const stockNum = Number(stock);
+    if (!Number.isFinite(stockNum)) throw new Error("El stock debe ser un número.");
+    if (!Number.isInteger(stockNum)) throw new Error("El stock debe ser un número entero.");
+    if (stockNum < 0) throw new Error("El stock no puede ser negativo.");
+
+    // Stock crítico (opcional, min 0, entero)
+    let stockCritNum = null;
+    if (trim(stockCritico) !== "") {
+      stockCritNum = Number(stockCritico);
+      if (!Number.isFinite(stockCritNum)) throw new Error("El stock crítico debe ser un número.");
+      if (!Number.isInteger(stockCritNum)) throw new Error("El stock crítico debe ser entero.");
+      if (stockCritNum < 0) throw new Error("El stock crítico no puede ser negativo.");
+    }
+
+    // Categoría (select requerido)
+    if (!trim(categoria)) throw new Error("Debes seleccionar una categoría.");
+
+    // Retorno normalizado listo para guardar
+    return {
+      codigo: trim(codigo),
+      nombre: trim(nombre),
+      descripcion: trim(descripcion),
+      precio: precioNum,
+      stock: stockNum,
+      stockCritico: stockCritNum, // puede quedar null si no lo informan
+      categoria: trim(categoria),
+      imagen: imagen || "", // opcional
+    };
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    const producto = {
-      codigo,
-      nombre,
-      descripcion,
-      precio,
-      stock,
-      stockCritico,
-      categoria,
-      imagen, // 🆕 guardar solo el nombre del archivo
-    };
-
-    onGuardar(producto);
-
-    // Limpiar campos y cerrar modal
-    setCodigo("");
-    setNombre("");
-    setDescripcion("");
-    setPrecio("");
-    setStock("");
-    setStockCritico("");
-    setCategoria("");
-    setImagen("");
-
-    onClose();
+    try {
+      setErrorMsg(""); // limpiar error previo
+      const producto = validar(); // 🔥 aquí se lanzan los throw Error si algo falla
+      onGuardar(producto); // delega guardado al padre
+      // Limpiar y cerrar solo si se guardó
+      setCodigo("");
+      setNombre("");
+      setDescripcion("");
+      setPrecio("");
+      setStock("");
+      setStockCritico("");
+      setCategoria("");
+      setImagen("");
+      onClose();
+    } catch (err) {
+      // Captura y muestra el mensaje de error
+      setErrorMsg(err?.message || "Validación inválida.");
+    }
   };
 
   const handleImagenChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setImagen(file.name); // 🆕 solo guarda el nombre del archivo
-    }
+    if (file) setImagen(file.name);
   };
 
   if (!isOpen) return null;
 
   return (
     <div
-      className={`modal fade show d-block`}
+      className="modal fade show d-block"
       tabIndex="-1"
       style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
     >
-      <div className="modal-dialog">
+      <div className="modal-dialog modal-lg modal-dialog-scrollable">
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title">
@@ -86,116 +149,158 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
             </h5>
             <button type="button" className="btn-close" onClick={onClose}></button>
           </div>
+
           <div className="modal-body">
-            <form onSubmit={handleSubmit}>
-              {/* Código */}
-              <div className="mb-3">
-                <label className="form-label">Código</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={codigo}
-                  onChange={(e) => setCodigo(e.target.value)}
-                  required
-                  disabled={!!productoEditar}
-                />
+            {errorMsg && (
+              <div className="alert alert-danger mb-3" role="alert" id="errorProducto">
+                {errorMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} noValidate>
+              <div className="row g-3 row-cols-1 row-cols-md-2">
+                {/* Código */}
+                <div className="col">
+                  <label className="form-label">Código</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={codigo}
+                    onChange={(e) => setCodigo(e.target.value)}
+                    required
+                    minLength={3}
+                    disabled={!!productoEditar}
+                  />
+                  <div className="form-text">Mínimo 3 caracteres.</div>
+                </div>
+
+                {/* Nombre */}
+                <div className="col">
+                  <label className="form-label">Nombre</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    required
+                    maxLength={100}
+                  />
+                  <div className="form-text">Máximo 100 caracteres.</div>
+                </div>
+
+                {/* Precio */}
+                <div className="col">
+                  <label className="form-label">Precio</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={precio}
+                    onChange={(e) => setPrecio(e.target.value)}
+                    required
+                    min={0}
+                    step="1"
+                    inputMode="numeric"
+                    onKeyDown={(e) => {
+                      if (e.key === "." || e.key === ",") e.preventDefault();
+                    }}
+                    onPaste={(e) => {
+                      const pasted = (e.clipboardData.getData("text") || "").replace(/[.,]/g, "");
+                      if (pasted !== e.clipboardData.getData("text")) {
+                        e.preventDefault();
+                        setPrecio(pasted);
+                      }
+                    }}
+                  />
+                  <div className="form-text">Mínimo 0. Solo números enteros (sin decimales).</div>
+                </div>
+
+                {/* Stock actual */}
+                <div className="col">
+                  <label className="form-label">Stock</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={stock}
+                    onChange={(e) => setStock(e.target.value)}
+                    required
+                    min={0}
+                    step="1"
+                    inputMode="numeric"
+                  />
+                  <div className="form-text">Mínimo 0. Solo enteros.</div>
+                </div>
+
+                {/* Stock crítico (opcional) */}
+                <div className="col">
+                  <label className="form-label">Stock crítico (opcional)</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={stockCritico}
+                    onChange={(e) => setStockCritico(e.target.value)}
+                    min={0}
+                    step="1"
+                    inputMode="numeric"
+                  />
+                  <div className="form-text">Mínimo 0. Solo enteros.</div>
+                </div>
+
+                {/* Categoría */}
+                <div className="col">
+                  <label className="form-label">Categoría</label>
+                  <select
+                    className="form-select"
+                    value={categoria}
+                    onChange={(e) => setCategoria(e.target.value)}
+                    required
+                  >
+                    <option value="">--Seleccione una categoría--</option>
+                    <option value="Abarrotes">Abarrotes</option>
+                    <option value="Bebidas">Bebidas</option>
+                    <option value="Cervezas">Cervezas</option>
+                    <option value="Fiambres">Fiambres</option>
+                    <option value="Licores">Licores</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </div>
+
+                {/* Descripción (opcional) - ocupa todo el ancho */}
+                <div className="col-12">
+                  <label className="form-label">Descripción (opcional)</label>
+                  <textarea
+                    className="form-control"
+                    value={descripcion}
+                    onChange={(e) => setDescripcion(e.target.value)}
+                    maxLength={500}
+                    rows={3}
+                  ></textarea>
+                  <div className="form-text">Máximo 500 caracteres.</div>
+                </div>
+
+                {/* Imagen (opcional) - ocupa todo el ancho */}
+                <div className="col-12">
+                  <label className="form-label">Imagen del producto (opcional)</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="form-control"
+                    onChange={handleImagenChange}
+                  />
+                  {imagen && (
+                    <small className="text-muted d-block mt-1">
+                      Nombre guardado: <strong>{imagen}</strong>
+                    </small>
+                  )}
+                </div>
               </div>
 
-              {/* Nombre */}
-              <div className="mb-3">
-                <label className="form-label">Nombre</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  required
-                />
-              </div>
-
-              {/* Descripción */}
-              <div className="mb-3">
-                <label className="form-label">Descripción</label>
-                <textarea
-                  className="form-control"
-                  value={descripcion}
-                  onChange={(e) => setDescripcion(e.target.value)}
-                  required
-                ></textarea>
-              </div>
-
-              {/* Precio */}
-              <div className="mb-3">
-                <label className="form-label">Precio</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={precio}
-                  onChange={(e) => setPrecio(e.target.value)}
-                  required
-                />
-              </div>
-
-              {/* Stock actual */}
-              <div className="mb-3">
-                <label className="form-label">Stock Actual</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={stock}
-                  onChange={(e) => setStock(e.target.value)}
-                />
-              </div>
-
-              {/* Stock crítico */}
-              <div className="mb-3">
-                <label className="form-label">Stock Crítico</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={stockCritico}
-                  onChange={(e) => setStockCritico(e.target.value)}
-                />
-              </div>
-
-              {/* Categoría */}
-              <div className="mb-3">
-                <label className="form-label">Categoría</label>
-                <select
-                  className="form-select"
-                  value={categoria}
-                  onChange={(e) => setCategoria(e.target.value)}
-                  required
-                >
-                  <option value="">--Seleccione una categoría--</option>
-                  <option value="Abarrotes">Abarrotes</option>
-                  <option value="Bebidas">Bebidas</option>
-                  <option value="Cervezas">Cervezas</option>
-                  <option value="Fiambres">Fiambres</option>
-                  <option value="Licores">Licores</option>
-                  <option value="Otro">Otro</option>
-                </select>
-              </div>
-
-              {/* 🆕 Imagen */}
-              <div className="mb-3">
-                <label className="form-label">Imagen del producto</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="form-control"
-                  onChange={handleImagenChange}
-                />
-                {imagen && (
-                  <small className="text-muted d-block mt-1">
-                    Nombre guardado: <strong>{imagen}</strong>
-                  </small>
-                )}
-              </div>
-
-              <div className="d-grid">
-                <button type="submit" className="btn btn-primary btn-lg">
+              {/* Footer fijo del formulario */}
+              <div className="d-flex justify-content-end gap-2 mt-4">
+                <button type="submit" className="btn btn-primary">
                   {productoEditar ? "Actualizar" : "Registrar"}
+                </button>
+                <button type="button" className="btn btn-outline-secondary" onClick={onClose}>
+                  Cancelar
                 </button>
               </div>
             </form>
