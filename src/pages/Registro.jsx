@@ -4,7 +4,7 @@ import Navbar from "../componentes/Navbar";
 import Footer from "../componentes/Footer";
 import logo from "../assets/images/logo_mercado.jpg";
 import { registrarUsuario, guardarSesion } from "../lib/auth";
-
+import { comunasPorRegion } from "../data/regiones-comunas";
 import { runValido, limpiarRUN } from "../utils/validadores";
 
 export default function Registro() {
@@ -22,73 +22,6 @@ export default function Registro() {
   const [comunas, setComunas] = useState([]);
   const nav = useNavigate();
 
-  const regionesComunas = {
-    rm: [
-      "Santiago","Providencia","Las Condes","Ñuñoa","Maipú","La Florida","Puente Alto",
-      "San Bernardo","La Cisterna","El Bosque","La Granja","La Pintana","San Miguel",
-      "San Joaquín","Macul","Peñalolén","La Reina","Vitacura","Lo Barnechea","Huechuraba",
-      "Recoleta","Independencia","Conchalí","Quilicura","Renca","Cerro Navia","Lo Prado",
-      "Quinta Normal","Pudahuel","Estación Central","Cerrillos"
-    ],
-    v: [
-      "Valparaíso","Viña del Mar","Quilpué","Villa Alemana","Limache","Concón",
-      "Quintero","Puchuncaví","Casablanca","Juan Fernández","San Antonio",
-      "Cartagena","El Tabo","El Quisco","Algarrobo","Santo Domingo"
-    ],
-    viii: [
-      "Concepción","Talcahuano","Chiguayante","San Pedro de la Paz","Coronel",
-      "Lota","Penco","Tomé","Florida","Hualpén","Hualqui","Santa Juana"
-    ],
-    x: [
-      "Puerto Montt","Puerto Varas","Osorno","Ancud","Castro","Quellón",
-      "Calbuco","Frutillar","Llanquihue","Los Muermos","Maullín","Purranque",
-      "Río Negro","San Pablo","Fresia","Puerto Octay"
-    ],
-    ii: [
-      "Antofagasta","Calama","Tocopilla","Mejillones","Taltal","María Elena",
-      "San Pedro de Atacama","Sierra Gorda"
-    ],
-    xv: ["Arica","Putre","Camarones"],
-    i: ["Iquique","Alto Hospicio","Pozo Almonte","Pica","Huara","Camiña","Colchane"],
-    iii: [
-      "Copiapó","Caldera","Chañaral","Diego de Almagro","Tierra Amarilla","Vallenar",
-      "Freirina","Huasco","Alto del Carmen"
-    ],
-    iv: [
-      "La Serena","Coquimbo","Ovalle","Illapel","Los Vilos","Salamanca","Vicuña",
-      "Andacollo","Monte Patria","Punitaqui","Río Hurtado","Combarbalá","Mincha"
-    ],
-    vi: [
-      "Rancagua","Machalí","Graneros","Codegua","San Francisco de Mostazal","Rengo",
-      "San Fernando","Santa Cruz","Pichilemu","Navidad","Litueche","La Estrella",
-      "Marchihue","Paredones","Palmilla","Peralillo","Placilla","Pumanque","Chépica",
-      "Nancagua"
-    ],
-    vii: [
-      "Curicó","Talca","Linares","Constitución","Cauquenes","Parral","San Javier",
-      "Molina","Teno","Río Claro","Sagrada Familia","Romeral","Rauco","Hualañé",
-      "Vichuquén","Chanco","Pelluhue","Empedrado","Colbún","Yerbas Buenas","Longaví",
-      "Retiro","Villa Alegre"
-    ],
-    ix: [
-      "Temuco","Padre Las Casas","Villarrica","Pucón","Angol","Victoria","Lautaro",
-      "Nueva Imperial","Carahue","Pitrufquén","Saavedra","Gorbea","Toltén","Loncoche",
-      "Cunco","Perquenco","Galvarino","Lumaco","Traiguén","Purén","Los Sauces",
-      "Renaico","Collipulli","Ercilla"
-    ],
-    xiv: [
-      "Valdivia","La Unión","Río Bueno","Paillaco","Los Lagos","Corral","Máfil",
-      "Mariquina","Panguipulli","Lanco","Futrono","Lago Ranco"
-    ],
-    xi: [
-      "Coyhaique","Aysén","Cisnes","Guaitecas","Chile Chico","Río Ibáñez",
-      "Cochrane","O'Higgins","Tortel"
-    ],
-    xii: [
-      "Punta Arenas","Puerto Natales","Porvenir","Primavera","Timaukel","San Gregorio",
-      "Río Verde","Laguna Blanca","Torres del Paine"
-    ],
-  };
 
   const onChange = (e) => {
     const { id, value } = e.target;
@@ -102,7 +35,7 @@ export default function Registro() {
     setF({ ...f, [id]: value });
 
     if (id === "region") {
-      setComunas(regionesComunas[value] || []);
+      setComunas(comunasPorRegion(value));
       setF((prev) => ({ ...prev, comuna: "" }));
     }
   };
