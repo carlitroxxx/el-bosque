@@ -5,15 +5,12 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   const opciones = [
-    { titulo: "📊 Dashboard", ruta: "/dashboard" },
-    { titulo: "📦 Productos", ruta: "/productos" },
-    { titulo: "📑 Reporte", ruta: "#" },
-    { titulo: "👥 Empleados", ruta: "#" },
-    { titulo: "👤 Usuarios", ruta: "/usuarios" },
-    { titulo: "⚙️ Ajustes", ruta: "#" },
-    { titulo: "❓ Help", ruta: "#" },
-    { titulo: "👤 Mi Cuenta", ruta: "#" },
-  ];
+  { titulo: "📊 Dashboard", ruta: "/dashboard" },
+  { titulo: "📦 Productos", ruta: "/productos" },
+  { titulo: "📬 Mensajes", ruta: "/mensajes" },
+  { titulo: "👤 Usuarios", ruta: "/usuarios" },
+  { titulo: "🏪 Vista Cliente", ruta: "/" }
+];
 
   return (
     <div className="bg-light min-vh-100 py-5">

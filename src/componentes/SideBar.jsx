@@ -4,17 +4,14 @@ import { Link, useLocation } from "react-router-dom";
 const Sidebar = () => {
   const location = useLocation();
 
-  const menu = [
-    { to: "/dashboard", label: "📊 Dashboard" },
-    { to: "/productos", label: "📦 Inventario" },
-    { to: "/reporte", label: "📑 Reporte" },
-    { to: "/empleados", label: "👥 Empleados" },
-    { to: "/usuarios", label: "👤 Usuarios" },
-    { separator: true },
-    { to: "/ajustes", label: "⚙️ Ajustes" },
-    { to: "/ayuda", label: "❓ Help" },
-    { to: "/mi-cuenta", label: "👤 Mi Cuenta" },
-  ];
+  
+const menu = [
+  { to: "/dashboard", label: "📊 Dashboard" },
+  { to: "/productos", label: "📦 Inventario" },
+  { to: "/mensajes", label: "📬 Mensajes" },
+  { to: "/usuarios", label: "👤 Usuarios" },
+  { to: "/", label: "🏪 Vista Cliente" }
+];
 
   return (
     <div className="col-2 border-end bg-white p-3">

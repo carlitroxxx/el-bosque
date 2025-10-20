@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { sesionActual, cerrarSesion, buscarUsuarioPorCorreo } from "../lib/auth";
+import { sesionActual, cerrarSesion, buscarUsuarioPorCorreo } from "../utils/auth";
 
 export default function Navbar() {
   const navigate = useNavigate();

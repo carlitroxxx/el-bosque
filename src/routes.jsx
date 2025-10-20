@@ -16,8 +16,9 @@ import Registro from "./pages/Registro";
 import Dashboard from "./pages/vista-admin/Dashboard";
 import Productos from "./pages/vista-admin/Productos";
 import Usuarios from "./pages/vista-admin/Usuarios";
+import MensajesContacto from "./pages/vista-admin/MensajesContacto";
 
-import { sesionActual, buscarUsuarioPorCorreo } from "./lib/auth";
+import { sesionActual, buscarUsuarioPorCorreo } from "./utils/auth";
 import Carrito from "./pages/Carrito";
 
 function RequiereRol({ roles, children }) {
@@ -74,6 +75,15 @@ export default function Rutas() {
         element={
           <RequiereRol roles={["admin"]}>
             <Usuarios />
+          </RequiereRol>
+        }
+      />
+
+      <Route
+        path="/mensajes"
+        element={
+          <RequiereRol roles={["admin"]}>
+            <MensajesContacto />
           </RequiereRol>
         }
       />

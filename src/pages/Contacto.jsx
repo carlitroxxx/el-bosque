@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Navbar from "../componentes/Navbar";
 import Footer from "../componentes/Footer";
 import logo from "../assets/images/logo_mercado.jpg";
-import { mensajesContacto } from "../lib/auth";
+import { mensajesContacto } from "../utils/auth";
 
 const Contacto = () => {
   const [error, setError] = useState("");

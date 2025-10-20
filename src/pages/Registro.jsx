@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../componentes/Navbar";
 import Footer from "../componentes/Footer";
 import logo from "../assets/images/logo_mercado.jpg";
-import { registrarUsuario, guardarSesion } from "../lib/auth";
+import { registrarUsuario, guardarSesion } from "../utils/auth";
 import { comunasPorRegion } from "../data/regiones-comunas";
 import { runValido, limpiarRUN } from "../utils/validadores";
 

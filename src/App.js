@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { BrowserRouter } from "react-router-dom";
 import Rutas from "./routes";
-import { obtenerUsuarios, guardarUsuarios } from "./lib/auth";
+import { obtenerUsuarios, guardarUsuarios } from "./utils/auth";
 
 export default function App() {
   useEffect(() => {

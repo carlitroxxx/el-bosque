@@ -1,4 +1,4 @@
-import { correoPermitido } from "../utils/validadores";
+import { correoPermitido, nombreContactoValido} from "./validadores";
 
 export function obtenerUsuarios() {
   const raw = localStorage.getItem("usuarios");
@@ -92,21 +92,25 @@ export function obtenerMensajesContacto() {
 export function guardarMensajeContacto(mensajes) {
   localStorage.setItem("msjContacto", JSON.stringify(mensajes));
 }
-export function mensajesContacto({nombre, correo, contenido}){
-  const invalido = correoPermitido(correo);
-  if(!invalido){
-    throw new Error("El dominio debe ser: @gmail.com - @duocuc.cl - @profesores.duocuc.cl");
+export function mensajesContacto({ nombre, correo, contenido }) {
+  // Validaciones básicas (si ya están importadas en este archivo)
+  if (typeof nombreContactoValido === "function" && !nombreContactoValido(nombre)) {
+    throw new Error("Nombre inválido.");
   }
-  const mensaje = {
-    nombre,
-    correo,
-    contenido
-  };
-  const mensajes = obtenerMensajesContacto();
-    mensajes.push(mensaje);
-    guardarMensajeContacto(mensajes);
-    return mensaje;
+  if (!correoPermitido(correo)) {
+    throw new Error("Correo inválido. Permitidos: gmail.com, duoc.cl, profesor.duoc.cl");
+  }
+  // Leer todos, obtener ID del último y +1
+  const mensajes = JSON.parse(localStorage.getItem("msjContacto")) || [];
+  const ultimo = mensajes.length > 0 ? mensajes[mensajes.length - 1] : null;
+  const lastId = Number(ultimo?.id) || 0;
+  const nuevoId = lastId + 1;
 
+  const mensaje = { id: nuevoId, nombre, correo, contenido };
+  mensajes.push(mensaje);
+  localStorage.setItem("msjContacto", JSON.stringify(mensajes));
+  return mensaje;
 }
+
 
 

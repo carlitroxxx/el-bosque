@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../componentes/Navbar";
 import Footer from "../componentes/Footer";
 import logo from "../assets/images/logo_mercado.jpg";
-import { iniciarSesion, sesionActual, buscarUsuarioPorCorreo } from "../lib/auth";
+import { iniciarSesion, sesionActual, buscarUsuarioPorCorreo } from "../utils/auth";
 
 export default function Login() {
   const [form, setForm] = useState({ correo: "", contrasena: "" });
