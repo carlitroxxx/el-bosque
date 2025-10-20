@@ -12,8 +12,6 @@ import Contacto from "./pages/Contacto";
 import ProductoDetalle from "./pages/ProductoDetalle";
 import Login from "./pages/Login";
 import Registro from "./pages/Registro";
-import ConfirmacionCompra from './pages/ConfirmacionCompra';
-import PagoFallido from './pages/PagoFallido';
 
 import Dashboard from "./pages/vista-admin/Dashboard";
 import Productos from "./pages/vista-admin/Productos";
@@ -22,6 +20,7 @@ import MensajesContacto from "./pages/vista-admin/MensajesContacto";
 
 import { sesionActual, buscarUsuarioPorCorreo } from "./utils/auth";
 import Carrito from "./pages/Carrito";
+import ResultadoPago from "./pages/ResultadoPago";
 
 function RequiereRol({ roles, children }) {
   const ses = sesionActual();
@@ -51,8 +50,7 @@ export default function Rutas() {
       <Route path="/detalle2" element={<Detalle2 />} />
       <Route path="/contacto" element={<Contacto />} />
       <Route path="/carrito" element={<Carrito />} />
-      <Route path="/confirmacioncompra" element={<ConfirmacionCompra />} />
-      <Route path="/pagofallido" element={<PagoFallido />} />
+      <Route path="/resultado-pago" element={<ResultadoPago />} />
       <Route path="/producto/:codigo" element={<ProductoDetalle />} />
       <Route path="/login" element={<Login />} />
       <Route path="/registro" element={<Registro />} />
