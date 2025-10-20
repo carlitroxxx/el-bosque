@@ -121,7 +121,7 @@ const Carrito = () => {
     
     if (datosEnvio.nombre.toLowerCase().includes("error")) {
       console.log("Simulando pago fallido...");
-      navigate('/pagofallido', { state: { orden: ordenData } });
+      navigate('/resultado-pago', { state: { orden: ordenData, exito: false } });
       return;
     }
     
@@ -139,7 +139,7 @@ const Carrito = () => {
     localStorage.setItem("ordenes", JSON.stringify(ordenesGuardadas));
    
 
-    navigate('/confirmacioncompra', { state: { orden: nuevaOrden } });
+    navigate('/resultado-pago', { state: { orden: nuevaOrden, exito: true } });
     
   
     vaciarCarrito();
@@ -156,35 +156,44 @@ const Carrito = () => {
             <h3 className="fw-bold mb-4 text-center">Lista de productos</h3>
 
             <div className="row row-cols-1 row-cols-md-3 g-4">
-              {carrito.map((producto) => (
-                <div key={producto.codigo} className="col">
-                  <div className="card h-100 shadow-sm text-center">
-                    <img
-                      src={producto.imagen}
-                      alt={producto.nombre}
-                      className="card-img-top"
-                      style={{
-                        height: "200px",
-                        objectFit: "cover",
-                        backgroundColor: "#f8f9fa",
-                      }}
-                    />
-                    <div className="card-body">
-                      <h6 className="fw-bold">{producto.nombre}</h6>
-                      <p className="text-muted mb-1">{producto.categoria}</p>
-                      <p className="fw-bold text-success">
-                        ${Number(producto.precio).toLocaleString("es-CL")}
-                      </p>
-                      <button
-                        className="btn btn-outline-dark btn-sm"
-                        onClick={() => eliminarDelCarrito(producto.codigo)}
-                      >
-                        Quitar
-                      </button>
+              {carrito.map((producto) => {
+                  const rutaImagen = producto.imagen
+                    ? require(`../assets/images/${producto.imagen}`)
+                    : require(`../assets/images/logo_mercado.jpg`);
+
+                  return (
+                    <div key={producto.codigo} className="col">
+                      <div className="card h-100 shadow-sm text-center">
+                        <img
+                          src={rutaImagen}
+                          alt={producto.nombre}
+                          className="card-img-top"
+                          onError={(e) => {
+                            e.target.src = "../assets/images/logo_mercado.jpg";
+                          }}
+                          style={{
+                            height: "200px",
+                            objectFit: "cover",
+                            backgroundColor: "#f8f9fa",
+                          }}
+                        />
+                        <div className="card-body">
+                          <h6 className="fw-bold">{producto.nombre}</h6>
+                          <p className="text-muted mb-1">{producto.categoria}</p>
+                          <p className="fw-bold text-success">
+                            ${Number(producto.precio).toLocaleString("es-CL")}
+                          </p>
+                          <button
+                            className="btn btn-outline-dark btn-sm"
+                            onClick={() => eliminarDelCarrito(producto.codigo)}
+                          >
+                            Quitar
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
             </div>
           </div>
 
