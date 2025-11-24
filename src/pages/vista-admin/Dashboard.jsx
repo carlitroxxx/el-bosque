@@ -6,7 +6,9 @@ const Dashboard = () => {
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("usuario"));
-    if (!user || user.rol !== "ADMINISTRADOR") {
+    const rol = user?.rol ? String(user.rol).toLowerCase() : null;
+
+    if (!user || rol !== "admin") {
       navigate("/login");
     }
   }, [navigate]);
@@ -30,16 +32,9 @@ const Dashboard = () => {
               <div
                 className="card card-option shadow p-3"
                 onClick={() => navigate(op.ruta)}
-                style={{
-                  cursor: "pointer",
-                  transition: "transform 0.2s ease-in-out",
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.transform = "scale(1.05)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.transform = "scale(1)")
-                }
+                style={{ cursor: "pointer", transition: "transform 0.2s ease-in-out" }}
+                onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+                onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
               >
                 <h4>{op.titulo}</h4>
               </div>

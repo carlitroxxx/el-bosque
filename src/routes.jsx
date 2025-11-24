@@ -118,7 +118,6 @@ export default function Rutas() {
         }
       />
 
-      {/* Cualquier otra ruta → home */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
