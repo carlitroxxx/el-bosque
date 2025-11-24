@@ -21,11 +21,7 @@ import MensajesContacto from "./pages/vista-admin/MensajesContacto";
 import Carrito from "./pages/Carrito";
 import ResultadoPago from "./pages/ResultadoPago";
 
-/**
- * Lee el usuario actual desde localStorage.
- * Esperamos algo como:
- *   localStorage["usuario"] = JSON.stringify({ id, nombre, email, rol: "admin", ... })
- */
+
 function getUsuarioActual() {
   try {
     const raw = localStorage.getItem("usuario");
@@ -38,11 +34,6 @@ function getUsuarioActual() {
   }
 }
 
-/**
- * Componente de protección por rol.
- * - Si no hay usuario => redirige a /login
- * - Si el rol no está en la lista => redirige a /
- */
 function RequiereRol({ roles, children }) {
   const location = useLocation();
   const usuario = getUsuarioActual();
