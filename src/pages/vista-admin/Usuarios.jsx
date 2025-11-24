@@ -3,68 +3,189 @@ import Sidebar from "../../componentes/SideBar";
 import Tabla from "../../componentes/Tabla";
 import ModalUsuario from "../../componentes/ModalUsuario";
 
+const API_URL = "http://localhost:3001/api/usuarios"; // ajusta el puerto si es otro
+
+// Convierte usuario que viene del backend -> forma usada en el front
+const fromApiUser = (u) => ({
+  id: u.id,
+  nombre: u.nombre,
+  correo: u.email,        // mapeo email -> correo
+  contrasena: "",         // no traemos la password real; dejamos vacío
+  telefono: u.telefono || "",
+  region: u.region || "",
+  comuna: u.comuna || "",
+  rol: u.rol || "CLIENTE",
+});
+
+// Convierte usuario del formulario front -> payload para el backend
+const toApiUser = (u) => ({
+  nombre: u.nombre,
+  email: u.correo,            // mapeo correo -> email
+  password: u.contrasena,     // mapeo contrasena -> password
+  telefono: u.telefono,
+  region: u.region,
+  comuna: u.comuna,
+  rol: u.rol,
+});
+
 const Usuarios = () => {
   const [usuarios, setUsuarios] = useState([]);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [usuarioEditar, setUsuarioEditar] = useState(null);
 
-  // Sembrar un admin si no hay usuarios guardados
+  // Cargar usuarios desde el backend y, si no hay, crear admin
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("usuarios")) || [];
-    if (stored.length === 0) {
-      const admin = {
-        nombre: "admin",
-        correo: "admin@ejemplo.cl",
-        contrasena: "admin123", // demo
-        telefono: "000000000",
-        region: "Los Lagos",
-        comuna: "Puerto Montt",
-        rol: "ADMINISTRADOR",
-      };
-      const initial = [admin];
-      localStorage.setItem("usuarios", JSON.stringify(initial));
-      setUsuarios(initial);
-    } else {
-      setUsuarios(stored);
-    }
+    const cargarUsuarios = async () => {
+      try {
+        const res = await fetch(API_URL);
+        if (!res.ok) throw new Error("Error al obtener usuarios");
+        const data = await res.json();
+
+        if (data.length === 0) {
+          // Crear admin inicial en el backend
+          const adminFront = {
+            nombre: "admin",
+            correo: "admin@ejemplo.cl",
+            contrasena: "admin123",
+            telefono: "000000000",
+            region: "Los Lagos",
+            comuna: "Puerto Montt",
+            rol: "ADMINISTRADOR",
+          };
+
+          const resAdmin = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(toApiUser(adminFront)),
+          });
+
+          if (!resAdmin.ok) throw new Error("Error creando admin inicial");
+
+          const adminCreado = await resAdmin.json();
+          setUsuarios([fromApiUser(adminCreado)]);
+        } else {
+          setUsuarios(data.map(fromApiUser));
+        }
+      } catch (error) {
+        console.error(error);
+        alert("Error cargando usuarios desde el servidor");
+      }
+    };
+
+    cargarUsuarios();
   }, []);
 
-  // Crear/Editar usuario usando el correo como identificador único
-  const guardarUsuario = (usuario) => {
-    let updated = [...usuarios];
+  // Crear / Editar usuario
+  const guardarUsuario = async (usuarioForm) => {
+    try {
+      if (usuarioEditar) {
+        // EDITAR
+        const id = usuarioEditar.id;
+        const payload = toApiUser({
+          ...usuarioForm,
+          rol: usuarioEditar.rol, // mantener el rol previo (o permitir cambiarlo si tu form lo hace)
+        });
 
-    if (usuarioEditar) {
-      const correoCambiado = usuario.correo !== usuarioEditar.correo;
-      if (correoCambiado && updated.some((u) => u.correo === usuario.correo)) {
-        alert("Ya existe un usuario con ese correo.");
-        return;
+        const res = await fetch(`${API_URL}/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (res.status === 409) {
+          alert("Ya existe un usuario con ese email/correo.");
+          return;
+        }
+
+        if (!res.ok) {
+          alert("Error actualizando usuario");
+          return;
+        }
+
+        const actualizado = fromApiUser(await res.json());
+
+        setUsuarios((prev) =>
+          prev.map((u) => (u.id === id ? actualizado : u))
+        );
+      } else {
+        // NUEVO
+        const payload = toApiUser({
+          ...usuarioForm,
+          rol: "CLIENTE",
+        });
+
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (res.status === 409) {
+          alert("Ya existe un usuario con ese email/correo.");
+          return;
+        }
+
+        if (!res.ok) {
+          alert("Error creando usuario");
+          return;
+        }
+
+        const creado = fromApiUser(await res.json());
+        setUsuarios((prev) => [...prev, creado]);
       }
-      // Si no trae rol (por seguridad), dejarlo como estaba o CLIENTE por defecto
-      const rolFinal = usuario.rol || usuarios.find(u => u.correo === usuarioEditar.correo)?.rol || "CLIENTE";
-      updated = updated.map((u) =>
-        u.correo === usuarioEditar.correo ? { ...u, ...usuario, rol: rolFinal } : u
-      );
-    } else {
-      if (updated.some((u) => u.correo === usuario.correo)) {
-        alert("Ya existe un usuario con ese correo.");
-        return;
-      }
-      // Asegurar rol CLIENTE por defecto
-      updated.push({ ...usuario, rol: "CLIENTE" });
+
+      setModalAbierto(false);
+      setUsuarioEditar(null);
+    } catch (error) {
+      console.error(error);
+      alert("Error guardando usuario");
+    }
+  };
+
+  // Eliminar usando correo (para no tocar Tabla) -> buscamos su id y llamamos al backend
+  const eliminarUsuario = async (dato) => {
+  console.log("dato recibido en eliminarUsuario:", dato);
+
+  let usuario = null;
+
+  // Si Tabla manda solo un string (correo o id)
+  if (typeof dato === "string" || typeof dato === "number") {
+    usuario =
+      usuarios.find((u) => u.correo === dato) ||
+      usuarios.find((u) => String(u.id) === String(dato));
+  }
+
+  // Si Tabla manda el objeto fila completo
+  if (typeof dato === "object" && dato !== null) {
+    usuario =
+      usuarios.find((u) => u.id === dato.id) ||
+      usuarios.find((u) => u.correo === dato.correo);
+  }
+
+  if (!usuario) {
+    alert("No se encontró el usuario a eliminar");
+    return;
+  }
+
+  if (!window.confirm(`¿Eliminar usuario ${usuario.nombre}?`)) return;
+
+  try {
+    const res = await fetch(`${API_URL}/${usuario.id}`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) {
+      alert("Error eliminando usuario");
+      return;
     }
 
-    setUsuarios(updated);
-    localStorage.setItem("usuarios", JSON.stringify(updated));
-    setModalAbierto(false);
-    setUsuarioEditar(null);
-  };
+    setUsuarios((prev) => prev.filter((u) => u.id !== usuario.id));
+  } catch (error) {
+    console.error(error);
+    alert("Error eliminando usuario");
+  }
+};
 
-  // Eliminar por correo
-  const eliminarUsuario = (correo) => {
-    const updated = usuarios.filter((u) => u.correo !== correo);
-    setUsuarios(updated);
-    localStorage.setItem("usuarios", JSON.stringify(updated));
-  };
 
   const editarUsuario = (usuario) => {
     setUsuarioEditar(usuario);
@@ -74,7 +195,7 @@ const Usuarios = () => {
   const columnas = [
     { header: "NOMBRE COMPLETO", field: "nombre" },
     { header: "CORREO", field: "correo" },
-    { header: "CONTRASEÑA", field: "contrasena" },
+    { header: "CONTRASEÑA", field: "contrasena" }, // ahora quedará vacío o ******** si quieres
     { header: "TELEFONO", field: "telefono" },
     { header: "REGION", field: "region" },
     { header: "COMUNA", field: "comuna" },
@@ -104,7 +225,7 @@ const Usuarios = () => {
               columns={columnas}
               data={usuarios}
               onEditar={editarUsuario}
-              onEliminar={eliminarUsuario} // que pase row.correo
+              onEliminar={eliminarUsuario} // sigue recibiendo row.correo desde Tabla
             />
           </div>
         </div>

@@ -3,6 +3,8 @@ import Sidebar from "../../componentes/SideBar";
 import ModalProducto from "../../componentes/ModalProducto";
 import Tabla from "../../componentes/Tabla";
 
+const API_URL = "http://localhost:3001/api/productos";
+
 const Productos = () => {
   const [productos, setProductos] = useState([]);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -11,42 +13,108 @@ const Productos = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [productoAEliminar, setProductoAEliminar] = useState(null);
 
+  const [cargando, setCargando] = useState(false);
+
+  // Cargar productos desde el backend al iniciar
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("productos")) || [];
-    setProductos(stored);
+    const fetchProductos = async () => {
+      setCargando(true);
+      try {
+        const res = await fetch("http://localhost:3001/api/productos");
+        if (!res.ok) {
+          throw new Error("Error obteniendo productos desde el servidor.");
+        }
+        const data = await res.json();
+        setProductos(data);
+      } catch (error) {
+        console.error(error);
+        alert(error.message || "No se pudieron cargar los productos.");
+      } finally {
+        setCargando(false);
+      }
+    };
+
+    fetchProductos();
   }, []);
 
-  const guardarProducto = (producto) => {
+  // Crear / actualizar producto en el backend
+  const guardarProducto = async (producto) => {
+    // producto ya viene validado desde el modal, pero normalizamos por si acaso
     const normalizado = {
       ...producto,
       precio: Number(producto.precio),
       stock: Number(producto.stock),
       stockCritico:
-        producto.stockCritico === null || producto.stockCritico === "" || producto.stockCritico === undefined
+        producto.stockCritico === null ||
+        producto.stockCritico === "" ||
+        producto.stockCritico === undefined
           ? null
           : Number(producto.stockCritico),
     };
-    let updated;
-    if (productoEditar) {
-      updated = productos.map((p) => (String(p.codigo) === String(productoEditar.codigo) ? { ...p, ...normalizado } : p));
-    } else {
-      if (productos.some(p => String(p.codigo) === String(normalizado.codigo))) {
-        alert("Ya existe un producto con ese código.");
-        return;
-      }
-      updated = [...productos, { ...normalizado }];
-    }
-    setProductos(updated);
-    localStorage.setItem("productos", JSON.stringify(updated));
-    setModalAbierto(false);
-    setProductoEditar(null);
 
-    if (
-      normalizado.stockCritico !== null &&
-      Number.isFinite(normalizado.stockCritico) &&
-      normalizado.stock <= normalizado.stockCritico
-    ) {
-      alert("El stock actual es menor o igual al stock crítico.");
+    try {
+      let res;
+
+      if (productoEditar) {
+        // UPDATE
+        res = await fetch(
+          `${API_URL}/${encodeURIComponent(productoEditar.codigo)}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(normalizado),
+          }
+        );
+      } else {
+        // CREATE
+        res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(normalizado),
+        });
+      }
+
+      if (!res.ok) {
+        let errorMsg = "Error guardando producto.";
+        try {
+          const data = await res.json();
+          if (data?.error) errorMsg = data.error;
+        } catch (e) {
+          // ignore
+        }
+        throw new Error(errorMsg);
+      }
+
+      const saved = await res.json();
+
+      setProductos((prev) => {
+        if (productoEditar) {
+          // reemplaza el producto editado
+          return prev.map((p) =>
+            String(p.codigo) === String(saved.codigo) ? saved : p
+          );
+        } else {
+          // agrega el nuevo
+          return [...prev, saved];
+        }
+      });
+
+      setModalAbierto(false);
+      setProductoEditar(null);
+
+      // Alerta si stock <= stock crítico
+      if (
+        saved.stockCritico !== null &&
+        saved.stockCritico !== undefined &&
+        Number.isFinite(Number(saved.stockCritico)) &&
+        Number(saved.stock) <= Number(saved.stockCritico)
+      ) {
+        alert("El stock actual es menor o igual al stock crítico.");
+      }
+    } catch (error) {
+      console.error(error);
+      // IMPORTANTE: lanzamos el error para que el modal lo muestre
+      throw error;
     }
   };
 
@@ -60,13 +128,40 @@ const Productos = () => {
     setShowConfirm(false);
   };
 
-  const confirmarEliminar = () => {
+  const confirmarEliminar = async () => {
     if (!productoAEliminar) return;
-    const updated = productos.filter((p) => String(p.codigo) !== String(productoAEliminar.codigo));
-    setProductos(updated);
-    localStorage.setItem("productos", JSON.stringify(updated));
-    setProductoAEliminar(null);
-    setShowConfirm(false);
+
+    try {
+      const res = await fetch(
+        `${API_URL}/${encodeURIComponent(productoAEliminar.codigo)}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!res.ok) {
+        let errorMsg = "Error eliminando producto.";
+        try {
+          const data = await res.json();
+          if (data?.error) errorMsg = data.error;
+        } catch (e) {
+          // ignore
+        }
+        throw new Error(errorMsg);
+      }
+
+      setProductos((prev) =>
+        prev.filter(
+          (p) => String(p.codigo) !== String(productoAEliminar.codigo)
+        )
+      );
+    } catch (error) {
+      console.error(error);
+      alert(error.message || "No se pudo eliminar el producto.");
+    } finally {
+      setProductoAEliminar(null);
+      setShowConfirm(false);
+    }
   };
 
   const columnas = [
@@ -103,12 +198,16 @@ const Productos = () => {
               </button>
             </div>
 
-            <Tabla
-              columns={columnas}
-              data={productos}
-              onEditar={editarProducto}
-              onEliminar={solicitarEliminar} 
-            />
+            {cargando ? (
+              <p>Cargando productos...</p>
+            ) : (
+              <Tabla
+                columns={columnas}
+                data={productos}
+                onEditar={editarProducto}
+                onEliminar={solicitarEliminar}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -127,12 +226,16 @@ const Productos = () => {
           role="dialog"
           aria-modal="true"
         >
-          <div className="bg-white rounded-3 shadow p-4" style={{ width: 420, maxWidth: "92%" }}>
+          <div
+            className="bg-white rounded-3 shadow p-4"
+            style={{ width: 420, maxWidth: "92%" }}
+          >
             <h5 className="mb-2">Confirmar eliminación</h5>
             <p className="mb-4">
               ¿Seguro que quieres eliminar el producto{" "}
               <strong>{productoAEliminar?.nombre}</strong> (código{" "}
-              <code>{productoAEliminar?.codigo}</code>)? Esta acción no se puede deshacer.
+              <code>{productoAEliminar?.codigo}</code>)? Esta acción no se
+              puede deshacer.
             </p>
             <div className="d-flex justify-content-end gap-2">
               <button className="btn btn-light" onClick={cancelarEliminar}>

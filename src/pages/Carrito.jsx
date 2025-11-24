@@ -1,39 +1,15 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../componentes/Navbar";
 import Footer from "../componentes/Footer";
 import { regiones } from "../datos/regiones-comunas";
-import { useNavigate } from 'react-router-dom';
-
-const normalizarCarrito = (items = []) => {
-  const map = new Map();
-  for (const it of items) {
-    const key = it.codigo;
-    const cant = Number(it.cantidad) || 1;
-    if (map.has(key)) {
-      const prev = map.get(key);
-      map.set(key, { ...prev, ...it, cantidad: (Number(prev.cantidad) || 1) + cant });
-    } else {
-      map.set(key, { ...it, cantidad: cant });
-    }
-  }
-  return Array.from(map.values());
-};
-
-
-function leerProductos() {
-  try {
-    const raw = localStorage.getItem("productos");
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch {
-    return [];
-  }
-}
+import { useNavigate } from "react-router-dom";
 
 const Carrito = () => {
   const navigate = useNavigate();
-  const [carrito, setCarrito] = useState([]);
-  const productos = useMemo(() => leerProductos(), []);
+
+  const [carritoId, setCarritoId] = useState(null);
+  const [carrito, setCarrito] = useState([]); // items normalizados para el front
+  const [cargando, setCargando] = useState(true);
 
   const [datosEnvio, setDatosEnvio] = useState({
     nombre: "",
@@ -44,48 +20,173 @@ const Carrito = () => {
     direccion: "",
   });
   const [comunas, setComunas] = useState([]);
-  
 
+  // Normalizar respuesta de backend a formato para el front
+  const normalizarCarritoDesdeAPI = (data) => {
+    const items = data.CarritoItems || [];
+    const normalizado = items.map((item) => ({
+      itemId: item.id,
+      productoId: item.productoId,
+      codigo: item.Producto?.codigo ?? "",
+      nombre: item.Producto?.nombre ?? "",
+      categoria: item.Producto?.categoria ?? "",
+      imagen: item.Producto?.imagen ?? "",
+      precio: item.precioUnitario,
+      cantidad: item.cantidad,
+      stock: item.Producto?.stock,
+    }));
+    setCarrito(normalizado);
+  };
+
+  // Cargar carrito desde backend
   useEffect(() => {
-    const guardado = JSON.parse(localStorage.getItem("carrito")) || [];
-    const normalizado = normalizarCarrito(guardado);
-    setCarrito(normalizado);
-    if(normalizado.length > 0) {
-      localStorage.setItem("carrito", JSON.stringify(normalizado));
+    const usuario = JSON.parse(localStorage.getItem("usuario"));
+
+    if (!usuario || !usuario.id) {
+      alert("Debes iniciar sesión para ver tu carrito.");
+      navigate("/login");
+      return;
     }
-  }, []);
 
-  const setYGuardar = (items) => {
-    const normalizado = normalizarCarrito(items);
-    setCarrito(normalizado);
-    localStorage.setItem("carrito", JSON.stringify(normalizado));
-  };
+    const fetchCarrito = async () => {
+      setCargando(true);
+      try {
+        // POST /api/carrito para obtener o crear carrito activo
+        const res = await fetch("http://localhost:3001/api/carrito", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ usuarioId: usuario.id }),
+        });
 
-  const eliminarDelCarrito = (codigo) => {
-    setYGuardar(carrito.filter((p) => p.codigo !== codigo));
-  };
+        if (!res.ok) {
+          let msg = "Error obteniendo carrito.";
+          try {
+            const data = await res.json();
+            if (data?.error) msg = data.error;
+          } catch {}
+          throw new Error(msg);
+        }
 
-  const actualizarCantidad = (codigo, nuevaCantidad) => {
-    if (nuevaCantidad < 1) return;
-    const productoOriginal = productos.find(p => String(p.codigo) === String(codigo));
-    if (productoOriginal && typeof productoOriginal.stock === 'number' && nuevaCantidad > productoOriginal.stock) {
-        alert(`No puedes agregar más. Stock disponible: ${productoOriginal.stock}.`);
-        return;
-    }
-    const nuevo = carrito.map((p) =>
-      p.codigo === codigo ? { ...p, cantidad: nuevaCantidad } : p
-    );
-    setYGuardar(nuevo);
-  };
+        const data = await res.json();
+        setCarritoId(data.id);
+        localStorage.setItem("carritoId", data.id);
+        normalizarCarritoDesdeAPI(data);
+      } catch (error) {
+        console.error(error);
+        alert(error.message || "No se pudo cargar el carrito.");
+      } finally {
+        setCargando(false);
+      }
+    };
+
+    fetchCarrito();
+  }, [navigate]);
 
   const calcularTotal = () => {
-    return carrito.reduce((total, producto) => {
-      return total + (producto.precio * (producto.cantidad || 1));
-    }, 0);
+    return carrito.reduce(
+      (total, producto) =>
+        total + producto.precio * (producto.cantidad || 1),
+      0
+    );
   };
 
-  const vaciarCarrito = () => {
-    setYGuardar([]);
+  const eliminarDelCarrito = async (codigo) => {
+    if (!carritoId) return;
+    const item = carrito.find((p) => p.codigo === codigo);
+    if (!item) return;
+
+    try {
+      const res = await fetch(
+        `http://localhost:3001/api/carrito/${carritoId}/items/${item.itemId}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!res.ok) {
+        let msg = "Error eliminando producto del carrito.";
+        try {
+          const data = await res.json();
+          if (data?.error) msg = data.error;
+        } catch {}
+        throw new Error(msg);
+      }
+
+      const data = await res.json(); // { carrito: carritoActualizado, total }
+      if (data.carrito) {
+        normalizarCarritoDesdeAPI(data.carrito);
+      } else {
+        // fallback: sacar el item localmente
+        setCarrito((prev) =>
+          prev.filter((p) => p.itemId !== item.itemId)
+        );
+      }
+    } catch (error) {
+      console.error(error);
+      alert(error.message || "No se pudo eliminar el producto.");
+    }
+  };
+
+  const actualizarCantidad = async (codigo, nuevaCantidad) => {
+    if (!carritoId || nuevaCantidad < 1) return;
+    const item = carrito.find((p) => p.codigo === codigo);
+    if (!item) return;
+
+    // Validar stock
+    if (
+      typeof item.stock === "number" &&
+      nuevaCantidad > item.stock
+    ) {
+      alert(`No puedes agregar más. Stock disponible: ${item.stock}.`);
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `http://localhost:3001/api/carrito/${carritoId}/items/${item.itemId}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cantidad: nuevaCantidad }),
+        }
+      );
+
+      if (!res.ok) {
+        let msg = "Error actualizando cantidad.";
+        try {
+          const data = await res.json();
+          if (data?.error) msg = data.error;
+        } catch {}
+        throw new Error(msg);
+      }
+
+      const data = await res.json(); // { carrito: carritoActualizado, total }
+      if (data.carrito) {
+        normalizarCarritoDesdeAPI(data.carrito);
+      }
+    } catch (error) {
+      console.error(error);
+      alert(error.message || "No se pudo actualizar la cantidad.");
+    }
+  };
+
+  const vaciarCarrito = async () => {
+    if (!carritoId) return;
+    try {
+      // No tienes endpoint para vaciar, así que eliminamos ítem por ítem
+      await Promise.all(
+        carrito.map((item) =>
+          fetch(
+            `http://localhost:3001/api/carrito/${carritoId}/items/${item.itemId}`,
+            { method: "DELETE" }
+          )
+        )
+      );
+      setCarrito([]);
+    } catch (error) {
+      console.error(error);
+      alert("No se pudo vaciar el carrito por completo.");
+    }
   };
 
   const handleDatosEnvioChange = (e) => {
@@ -95,11 +196,11 @@ const Carrito = () => {
   const handleRegionChange = (e) => {
     const nombreRegion = e.target.value;
     setDatosEnvio({ ...datosEnvio, region: nombreRegion, comuna: "" });
-    const regionEncontrada = regiones.find(r => r.nombre === nombreRegion);
+    const regionEncontrada = regiones.find((r) => r.nombre === nombreRegion);
     setComunas(regionEncontrada ? regionEncontrada.comunas : []);
   };
 
-  const finalizarCompra = (e) => {
+  const finalizarCompra = async (e) => {
     e.preventDefault();
     if (carrito.length === 0) {
       alert("Tu carrito está vacío.");
@@ -118,51 +219,66 @@ const Carrito = () => {
       datosEnvio: datosEnvio,
     };
 
-    
+    // Simulación de error de pago
     if (datosEnvio.nombre.toLowerCase().includes("error")) {
       console.log("Simulando pago fallido...");
-      navigate('/resultado-pago', { state: { orden: ordenData, exito: false } });
+      navigate("/resultado-pago", {
+        state: { orden: ordenData, exito: false },
+      });
       return;
     }
-    
-  
+
     console.log("Procesando pago exitoso...");
-    
-  
-    const ordenesGuardadas = JSON.parse(localStorage.getItem("ordenes")) || [];
+
+    // Guardar orden en localStorage (a falta de endpoint /api/ordenes)
+    const ordenesGuardadas =
+      JSON.parse(localStorage.getItem("ordenes")) || [];
     const nuevaOrden = {
-        ...ordenData,
-        id: Date.now(), 
-        fecha: new Date().toISOString(), 
+      ...ordenData,
+      id: Date.now(),
+      fecha: new Date().toISOString(),
     };
     ordenesGuardadas.push(nuevaOrden);
     localStorage.setItem("ordenes", JSON.stringify(ordenesGuardadas));
-   
 
-    navigate('/resultado-pago', { state: { orden: nuevaOrden, exito: true } });
-    
-  
-    vaciarCarrito();
-    setDatosEnvio({ nombre: "", email: "", telefono: "", region: "", comuna: "", direccion: "" });
+    // Vaciar carrito en backend y front
+    await vaciarCarrito();
+
+    navigate("/resultado-pago", {
+      state: { orden: nuevaOrden, exito: true },
+    });
+
+    setDatosEnvio({
+      nombre: "",
+      email: "",
+      telefono: "",
+      region: "",
+      comuna: "",
+      direccion: "",
+    });
   };
+
   return (
     <div className="d-flex flex-column min-vh-100">
       <Navbar />
 
       <main className="container mt-5 mb-5 flex-grow-1">
         <div className="row">
-          {/* Lista de productos */}
+          {/* Lista de productos en el carrito */}
           <div className="col-md-8">
             <h3 className="fw-bold mb-4 text-center">Lista de productos</h3>
 
-            <div className="row row-cols-1 row-cols-md-3 g-4">
-              {carrito.map((producto) => {
+            {cargando ? (
+              <p className="text-center">Cargando carrito...</p>
+            ) : (
+              <div className="row row-cols-1 row-cols-md-3 g-4">
+                {carrito.map((producto) => {
                   const rutaImagen = producto.imagen
                     ? require(`../assets/images/${producto.imagen}`)
                     : require(`../assets/images/logo_mercado.jpg`);
 
                   return (
-                    <div key={producto.codigo} className="col">
+                    <div key={producto.itemId} className="col">
                       <div className="card h-100 shadow-sm text-center">
                         <img
                           src={rutaImagen}
@@ -179,13 +295,18 @@ const Carrito = () => {
                         />
                         <div className="card-body">
                           <h6 className="fw-bold">{producto.nombre}</h6>
-                          <p className="text-muted mb-1">{producto.categoria}</p>
+                          <p className="text-muted mb-1">
+                            {producto.categoria}
+                          </p>
                           <p className="fw-bold text-success">
-                            ${Number(producto.precio).toLocaleString("es-CL")}
+                            $
+                            {Number(producto.precio).toLocaleString("es-CL")}
                           </p>
                           <button
                             className="btn btn-outline-dark btn-sm"
-                            onClick={() => eliminarDelCarrito(producto.codigo)}
+                            onClick={() =>
+                              eliminarDelCarrito(producto.codigo)
+                            }
                           >
                             Quitar
                           </button>
@@ -194,16 +315,19 @@ const Carrito = () => {
                     </div>
                   );
                 })}
-            </div>
+              </div>
+            )}
           </div>
 
-          {/* Carrito de compras */}
+          {/* Resumen de carrito y cantidades */}
           <div className="col-md-4">
             <h3 className="fw-bold mb-4 text-center">Carrito de Compras</h3>
             <div className="card shadow-sm">
               <div className="card-body">
                 {carrito.length === 0 ? (
-                  <p className="text-center text-muted">Tu carrito está vacío</p>
+                  <p className="text-center text-muted">
+                    Tu carrito está vacío
+                  </p>
                 ) : (
                   <>
                     <table className="table align-middle">
@@ -217,7 +341,7 @@ const Carrito = () => {
                       </thead>
                       <tbody>
                         {carrito.map((producto) => (
-                          <tr key={producto.codigo}>
+                          <tr key={producto.itemId}>
                             <td>{producto.nombre}</td>
                             <td>
                               <div className="d-flex align-items-center">
@@ -244,7 +368,6 @@ const Carrito = () => {
                                       (producto.cantidad || 1) + 1
                                     )
                                   }
-                                  disabled={(producto.cantidad || 1) >= (productos.find(p => p.id === producto.id)?.stock || Infinity)}
                                 >
                                   +
                                 </button>
@@ -254,12 +377,14 @@ const Carrito = () => {
                               $
                               {(
                                 producto.precio * (producto.cantidad || 1)
-                              ).toLocaleString()}
+                              ).toLocaleString("es-CL")}
                             </td>
                             <td>
                               <button
                                 className="btn btn-sm btn-outline-danger"
-                                onClick={() => eliminarDelCarrito(producto.codigo)}
+                                onClick={() =>
+                                  eliminarDelCarrito(producto.codigo)
+                                }
                               >
                                 <i className="bi bi-trash"></i>
                               </button>
@@ -272,7 +397,8 @@ const Carrito = () => {
                     <hr />
                     <div className="d-flex justify-content-between align-items-center">
                       <h5 className="fw-bold">
-                        Total: ${calcularTotal().toLocaleString()}
+                        Total: $
+                        {calcularTotal().toLocaleString("es-CL")}
                       </h5>
                     </div>
                     <div className="d-grid gap-2 mt-3">
@@ -293,49 +419,123 @@ const Carrito = () => {
         <hr className="my-5" />
 
         {carrito.length > 0 && (
-            <div className="row justify-content-center">
-                <div className="col-lg-8">
-                    <h3 className="fw-bold mb-4">Dirección de Despacho</h3>
-                    <form onSubmit={finalizarCompra} noValidate>
-                    <div className="row g-3">
-                        <div className="col-12">
-                        <label htmlFor="nombre" className="form-label">Nombre Completo</label>
-                        <input type="text" className="form-control" id="nombre" name="nombre" value={datosEnvio.nombre} onChange={handleDatosEnvioChange} required />
-                        </div>
-                        <div className="col-12">
-                        <label htmlFor="email" className="form-label">Email</label>
-                        <input type="email" className="form-control" id="email" name="email" value={datosEnvio.email} onChange={handleDatosEnvioChange} required />
-                        </div>
-                        <div className="col-12">
-                        <label htmlFor="telefono" className="form-label">Teléfono</label>
-                        <input type="tel" className="form-control" id="telefono" name="telefono" value={datosEnvio.telefono} onChange={handleDatosEnvioChange} required />
-                        </div>
-                        <div className="col-12">
-                        <label htmlFor="region" className="form-label">Región</label>
-                        <select className="form-select" id="region" name="region" value={datosEnvio.region} onChange={handleRegionChange} required>
-                            <option value="">Seleccionar...</option>
-                            {regiones.map(r => <option key={r.nombre} value={r.nombre}>{r.nombre}</option>)}
-                        </select>
-                        </div>
-                        <div className="col-12">
-                        <label htmlFor="comuna" className="form-label">Comuna</label>
-                        <select className="form-select" id="comuna" name="comuna" value={datosEnvio.comuna} onChange={handleDatosEnvioChange} required disabled={!datosEnvio.region}>
-                            <option value="">Seleccionar...</option>
-                            {comunas.map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                        </div>
-                        <div className="col-12">
-                        <label htmlFor="direccion" className="form-label">Dirección</label>
-                        <input type="text" className="form-control" id="direccion" name="direccion" value={datosEnvio.direccion} onChange={handleDatosEnvioChange} required placeholder="Calle, Número, Depto/Casa" />
-                        </div>
-                    </div>
-                    <hr className="my-4" />
-                    <button className="w-100 btn btn-success btn-lg" type="submit">Finalizar Compra</button>
-                    </form>
+          <div className="row justify-content-center">
+            <div className="col-lg-8">
+              <h3 className="fw-bold mb-4">Dirección de Despacho</h3>
+              <form onSubmit={finalizarCompra} noValidate>
+                <div className="row g-3">
+                  <div className="col-12">
+                    <label htmlFor="nombre" className="form-label">
+                      Nombre Completo
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      id="nombre"
+                      name="nombre"
+                      value={datosEnvio.nombre}
+                      onChange={handleDatosEnvioChange}
+                      required
+                    />
+                  </div>
+                  <div className="col-12">
+                    <label htmlFor="email" className="form-label">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      className="form-control"
+                      id="email"
+                      name="email"
+                      value={datosEnvio.email}
+                      onChange={handleDatosEnvioChange}
+                      required
+                    />
+                  </div>
+                  <div className="col-12">
+                    <label htmlFor="telefono" className="form-label">
+                      Teléfono
+                    </label>
+                    <input
+                      type="tel"
+                      className="form-control"
+                      id="telefono"
+                      name="telefono"
+                      value={datosEnvio.telefono}
+                      onChange={handleDatosEnvioChange}
+                      required
+                    />
+                  </div>
+                  <div className="col-12">
+                    <label htmlFor="region" className="form-label">
+                      Región
+                    </label>
+                    <select
+                      className="form-select"
+                      id="region"
+                      name="region"
+                      value={datosEnvio.region}
+                      onChange={handleRegionChange}
+                      required
+                    >
+                      <option value="">Seleccionar...</option>
+                      {regiones.map((r) => (
+                        <option key={r.nombre} value={r.nombre}>
+                          {r.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="col-12">
+                    <label htmlFor="comuna" className="form-label">
+                      Comuna
+                    </label>
+                    <select
+                      className="form-select"
+                      id="comuna"
+                      name="comuna"
+                      value={datosEnvio.comuna}
+                      onChange={handleDatosEnvioChange}
+                      required
+                      disabled={!datosEnvio.region}
+                    >
+                      <option value="">Seleccionar...</option>
+                      {comunas.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="col-12">
+                    <label htmlFor="direccion" className="form-label">
+                      Dirección
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      id="direccion"
+                      name="direccion"
+                      value={datosEnvio.direccion}
+                      onChange={handleDatosEnvioChange}
+                      required
+                      placeholder="Calle, Número, Depto/Casa"
+                    />
+                  </div>
                 </div>
+                <hr className="my-4" />
+                <button
+                  className="w-100 btn btn-success btn-lg"
+                  type="submit"
+                >
+                  Finalizar Compra
+                </button>
+              </form>
             </div>
+          </div>
         )}
       </main>
+
       <Footer />
     </div>
   );

@@ -1,38 +1,152 @@
-import React from "react";
-import UserForm from "./UserForm";
+import React, { useState, useEffect } from "react";
 
 const ModalUsuario = ({ isOpen, onClose, onGuardar, usuarioEditar }) => {
-  if (!isOpen) return null;
+  const [form, setForm] = useState({
+    nombre: "",
+    correo: "",
+    contrasena: "",
+    telefono: "",
+    region: "",
+    comuna: "",
+    rol: "",
+  });
 
-  const handleSubmit = (formData) => {
-    onGuardar?.(formData);
+  // Cargar datos cuando se abre el modal
+  useEffect(() => {
+    if (usuarioEditar) {
+      setForm({
+        nombre: usuarioEditar.nombre,
+        correo: usuarioEditar.correo,
+        contrasena: "", // nunca traemos password del backend
+        telefono: usuarioEditar.telefono || "",
+        region: usuarioEditar.region || "",
+        comuna: usuarioEditar.comuna || "",
+        rol: usuarioEditar.rol || "CLIENTE",
+      });
+    } else {
+      // Nuevo usuario
+      setForm({
+        nombre: "",
+        correo: "",
+        contrasena: "",
+        telefono: "",
+        region: "",
+        comuna: "",
+        rol: "CLIENTE",
+      });
+    }
+  }, [usuarioEditar, isOpen]);
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  return (
-    <div
-      className="modal fade show d-block"
-      tabIndex="-1"
-      style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-    >
-      <div className="modal-dialog">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h5 className="modal-title">
-              {usuarioEditar ? "Editar Usuario" : "Nuevo Usuario"}
-            </h5>
-            <button type="button" className="btn-close" onClick={onClose}></button>
-          </div>
+  const guardar = () => {
+    if (!form.nombre || !form.correo) {
+      alert("Nombre y correo son obligatorios");
+      return;
+    }
 
-          <div className="modal-body">
-            <UserForm
-              initialData={usuarioEditar || {}}
-              onSubmit={handleSubmit}
-              onCancel={onClose}
-              submitLabel={usuarioEditar ? "Actualizar" : "Registrar"}
-              disableEmail={!!usuarioEditar}
-              showPassword={!usuarioEditar}
-            />
+    onGuardar(form); // se enviará al backend desde Usuarios.jsx
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-contenido">
+        <h3>{usuarioEditar ? "Editar Usuario" : "Nuevo Usuario"}</h3>
+
+        <div className="form-group">
+          <label>Nombre Completo</label>
+          <input
+            type="text"
+            name="nombre"
+            value={form.nombre}
+            onChange={handleChange}
+            className="form-control"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Correo</label>
+          <input
+            type="email"
+            name="correo"
+            value={form.correo}
+            onChange={handleChange}
+            className="form-control"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Contraseña</label>
+          <input
+            type="password"
+            name="contrasena"
+            value={form.contrasena}
+            onChange={handleChange}
+            placeholder={usuarioEditar ? "Dejar en blanco para no cambiar" : ""}
+            className="form-control"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Teléfono</label>
+          <input
+            type="text"
+            name="telefono"
+            value={form.telefono}
+            onChange={handleChange}
+            className="form-control"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Región</label>
+          <input
+            type="text"
+            name="region"
+            value={form.region}
+            onChange={handleChange}
+            className="form-control"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Comuna</label>
+          <input
+            type="text"
+            name="comuna"
+            value={form.comuna}
+            onChange={handleChange}
+            className="form-control"
+          />
+        </div>
+
+        {usuarioEditar && (
+          <div className="form-group">
+            <label>Rol</label>
+            <select
+              name="rol"
+              value={form.rol}
+              onChange={handleChange}
+              className="form-control"
+            >
+              <option value="CLIENTE">CLIENTE</option>
+              <option value="ADMINISTRADOR">ADMINISTRADOR</option>
+              <option value="PROFESIONAL">PROFESIONAL</option>
+            </select>
           </div>
+        )}
+
+        <div className="modal-botones">
+          <button className="btn btn-secondary" onClick={onClose}>
+            Cancelar
+          </button>
+          <button className="btn btn-dark" onClick={guardar}>
+            Guardar
+          </button>
         </div>
       </div>
     </div>

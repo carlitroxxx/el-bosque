@@ -94,12 +94,15 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
     };
   };
 
-  const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setErrorMsg("");
-      const producto = validar(); 
-      onGuardar(producto);
+      const producto = validar();
+      // Esperamos a que el padre guarde en el backend
+      await onGuardar(producto);
+
+      // Si todo salió bien, limpiamos y cerramos
       setCodigo("");
       setNombre("");
       setDescripcion("");
@@ -110,9 +113,11 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
       setImagen("");
       onClose();
     } catch (err) {
-      setErrorMsg(err?.message || "Validación inválida.");
+      // Si el backend devolvió un error, lo mostramos aquí
+      setErrorMsg(err?.message || "Error guardando el producto.");
     }
   };
+
 
   const handleImagenChange = (e) => {
     const file = e.target.files[0];
