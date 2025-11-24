@@ -144,48 +144,47 @@ const Usuarios = () => {
 
   // Eliminar usando correo (para no tocar Tabla) -> buscamos su id y llamamos al backend
   const eliminarUsuario = async (dato) => {
-  console.log("dato recibido en eliminarUsuario:", dato);
+    console.log("dato recibido en eliminarUsuario:", dato);
 
-  let usuario = null;
+    let usuario = null;
 
-  // Si Tabla manda solo un string (correo o id)
-  if (typeof dato === "string" || typeof dato === "number") {
-    usuario =
-      usuarios.find((u) => u.correo === dato) ||
-      usuarios.find((u) => String(u.id) === String(dato));
-  }
+    // Si Tabla manda solo un string (correo o id)
+    if (typeof dato === "string" || typeof dato === "number") {
+      usuario =
+        usuarios.find((u) => u.correo === dato) ||
+        usuarios.find((u) => String(u.id) === String(dato));
+    }
 
-  // Si Tabla manda el objeto fila completo
-  if (typeof dato === "object" && dato !== null) {
-    usuario =
-      usuarios.find((u) => u.id === dato.id) ||
-      usuarios.find((u) => u.correo === dato.correo);
-  }
+    // Si Tabla manda el objeto fila completo
+    if (typeof dato === "object" && dato !== null) {
+      usuario =
+        usuarios.find((u) => u.id === dato.id) ||
+        usuarios.find((u) => u.correo === dato.correo);
+    }
 
-  if (!usuario) {
-    alert("No se encontró el usuario a eliminar");
-    return;
-  }
-
-  if (!window.confirm(`¿Eliminar usuario ${usuario.nombre}?`)) return;
-
-  try {
-    const res = await fetch(`${API_URL}/${usuario.id}`, {
-      method: "DELETE",
-    });
-
-    if (!res.ok) {
-      alert("Error eliminando usuario");
+    if (!usuario) {
+      alert("No se encontró el usuario a eliminar");
       return;
     }
 
-    setUsuarios((prev) => prev.filter((u) => u.id !== usuario.id));
-  } catch (error) {
-    console.error(error);
-    alert("Error eliminando usuario");
-  }
-};
+    if (!window.confirm(`¿Eliminar usuario ${usuario.nombre}?`)) return;
 
+    try {
+      const res = await fetch(`${API_URL}/${usuario.id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        alert("Error eliminando usuario");
+        return;
+      }
+
+      setUsuarios((prev) => prev.filter((u) => u.id !== usuario.id));
+    } catch (error) {
+      console.error(error);
+      alert("Error eliminando usuario");
+    }
+  };
 
   const editarUsuario = (usuario) => {
     setUsuarioEditar(usuario);
