@@ -4,20 +4,20 @@ import Footer from "../componentes/Footer";
 import ProductoCard from "../componentes/ProductoCard";
 import { useNavigate } from "react-router-dom";
 
+const API = "http://localhost:3001/api";
+
 const Catalogo = () => {
   const navigate = useNavigate();
   const [productos, setProductos] = useState([]);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todos");
   const [categorias, setCategorias] = useState([]);
 
-  // Cargar productos desde el backend
   useEffect(() => {
     const fetchProductos = async () => {
       try {
-        const res = await fetch("http://localhost:3001/api/productos");
-        if (!res.ok) {
-          throw new Error("Error cargando productos desde el servidor.");
-        }
+        const res = await fetch(`${API}/productos`);
+        if (!res.ok) throw new Error("Error cargando productos desde el servidor.");
+
         const data = await res.json();
         setProductos(data);
 
@@ -35,12 +35,15 @@ const Catalogo = () => {
     fetchProductos();
   }, []);
 
-  // Obtener o crear carrito en el backend para el usuario actual
-  const obtenerOCrearCarrito = async (usuarioId) => {
-    const res = await fetch("http://localhost:3001/api/carrito", {
+  const obtenerOCrearCarrito = async () => {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(`${API}/carrito`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ usuarioId }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     if (!res.ok) {
@@ -52,15 +55,16 @@ const Catalogo = () => {
       throw new Error(msg);
     }
 
-    const data = await res.json();
-    localStorage.setItem("carritoId", data.id);
-    return data;
+    const carrito = await res.json();
+    localStorage.setItem("carritoId", carrito.id);
+    return carrito;
   };
 
   const agregarAlCarrito = async (producto) => {
     const usuario = JSON.parse(localStorage.getItem("usuario"));
+    const token = localStorage.getItem("token");
 
-    if (!usuario || !usuario.id) {
+    if (!usuario || !token) {
       alert("Debes iniciar sesión para agregar productos al carrito.");
       navigate("/login");
       return;
@@ -70,18 +74,21 @@ const Catalogo = () => {
       let carritoId = localStorage.getItem("carritoId");
 
       if (!carritoId) {
-        const carrito = await obtenerOCrearCarrito(usuario.id);
+        const carrito = await obtenerOCrearCarrito();
         carritoId = carrito.id;
       }
 
-      const resItem = await fetch(
-        `http://localhost:3001/api/carrito/${carritoId}/items`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ productoId: producto.id, cantidad: 1 }),
-        }
-      );
+      const resItem = await fetch(`${API}/carrito/${carritoId}/items`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          productoId: producto.id,
+          cantidad: 1,
+        }),
+      });
 
       if (!resItem.ok) {
         let msg = "Error agregando producto al carrito.";
@@ -100,7 +107,7 @@ const Catalogo = () => {
   };
 
   const productosFiltrados =
-    !categoriaSeleccionada || categoriaSeleccionada === "Todos"
+    categoriaSeleccionada === "Todos"
       ? productos
       : productos.filter((p) => p.categoria === categoriaSeleccionada);
 

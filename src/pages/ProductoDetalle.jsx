@@ -3,45 +3,150 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "../componentes/Navbar";
 import Footer from "../componentes/Footer";
 
-function leerProductos() {
-  try {
-    const raw = localStorage.getItem("productos");
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch {
-    return [];
-  }
-}
-
-function leerCarrito() {
-  try {
-    const raw = localStorage.getItem("carrito");
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch {
-    return [];
-  }
-}
-
-function guardarCarrito(items) {
-  localStorage.setItem("carrito", JSON.stringify(items));
-}
+const API = "http://localhost:3001/api";
 
 export default function ProductoDetalle() {
   const { codigo } = useParams();
   const navigate = useNavigate();
+
+  const [productos, setProductos] = useState([]);
   const [cantidad, setCantidad] = useState(1);
   const [mainImg, setMainImg] = useState(null);
+  const [cargando, setCargando] = useState(true);
 
-  const productos = useMemo(() => leerProductos(), []);
+  useEffect(() => {
+    const fetchProductos = async () => {
+      try {
+        const res = await fetch(`${API}/productos`);
+        if (!res.ok) throw new Error("No se pudieron cargar los productos.");
+        const data = await res.json();
+        setProductos(data);
+      } catch (err) {
+        console.error(err);
+        alert(err.message || "Error cargando producto.");
+      } finally {
+        setCargando(false);
+      }
+    };
+    fetchProductos();
+  }, []);
+
   const producto = useMemo(
-    () => productos.find(p => String(p.codigo) === String(codigo)),
+    () => productos.find((p) => String(p.codigo) === String(codigo)),
     [codigo, productos]
   );
 
-  const rutaImagen = producto && producto.imagen
-    ? require(`../assets/images/${producto.imagen}`)
-    : require(`../assets/images/logo_mercado.jpg`);
+  const rutaImagen =
+    producto && producto.imagen
+      ? require(`../assets/images/${producto.imagen}`)
+      : require(`../assets/images/logo_mercado.jpg`);
+
+  const relacionados = useMemo(() => {
+    if (!producto) return [];
+    return productos
+      .filter((p) => p.codigo !== producto.codigo)
+      .slice(0, 4);
+  }, [productos, producto]);
+
+  function onCambiarCantidad(e) {
+    const v = Number(e.target.value);
+    setCantidad(Number.isFinite(v) && v > 0 ? v : 1);
+  }
+
+  const obtenerOCrearCarrito = async () => {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(`${API}/carrito`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) {
+      let msg = "Error obteniendo/creando carrito.";
+      try {
+        const data = await res.json();
+        if (data?.error) msg = data.error;
+      } catch {}
+      throw new Error(msg);
+    }
+
+    const data = await res.json();
+    localStorage.setItem("carritoId", data.id);
+    return data;
+  };
+
+  async function agregarAlCarrito() {
+    if (!producto) return;
+
+    const usuario = JSON.parse(localStorage.getItem("usuario"));
+    const token = localStorage.getItem("token");
+
+    if (!usuario || !token) {
+      alert("Debes iniciar sesión para agregar productos al carrito.");
+      navigate("/login");
+      return;
+    }
+
+    const cant = Math.max(1, Number(cantidad) || 1);
+
+    if (typeof producto.stock === "number" && cant > producto.stock) {
+      alert(`No hay stock suficiente. Stock disponible: ${producto.stock}.`);
+      return;
+    }
+
+    try {
+      let carritoId = localStorage.getItem("carritoId");
+
+      if (!carritoId) {
+        const carrito = await obtenerOCrearCarrito();
+        carritoId = carrito.id;
+      }
+
+      const resItem = await fetch(
+        `${API}/carrito/${carritoId}/items`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            productoId: producto.id,
+            cantidad: cant,
+          }),
+        }
+      );
+
+      if (!resItem.ok) {
+        let msg = "Error agregando producto al carrito.";
+        try {
+          const dataErr = await resItem.json();
+          if (dataErr?.error) msg = dataErr.error;
+        } catch {}
+        throw new Error(msg);
+      }
+
+      alert("Producto añadido al carrito.");
+    } catch (error) {
+      console.error(error);
+      alert(error.message || "No se pudo agregar el producto al carrito.");
+    }
+  }
+
+  if (cargando) {
+    return (
+      <>
+        <Navbar />
+        <div className="container py-5">
+          <p className="text-center">Cargando producto...</p>
+        </div>
+        <Footer />
+      </>
+    );
+  }
 
   if (!producto) {
     return (
@@ -51,7 +156,7 @@ export default function ProductoDetalle() {
           <div className="alert alert-warning">
             Producto no encontrado.
             <div className="mt-3">
-              <Link to="/productos" className="btn btn-primary">
+              <Link to="/catalogo" className="btn btn-primary">
                 Volver a productos
               </Link>
             </div>
@@ -60,46 +165,6 @@ export default function ProductoDetalle() {
         <Footer />
       </>
     );
-  }
-
-  const relacionados = productos
-    .filter(p => p.codigo !== producto.codigo)
-    .slice(0, 4);
-
-  function onCambiarCantidad(e) {
-    const v = Number(e.target.value);
-    setCantidad(Number.isFinite(v) && v > 0 ? v : 1);
-  }
-
-  function agregarAlCarrito() {
-    const cant = Math.max(1, Number(cantidad) || 1);
-    const carrito = leerCarrito();
-
-    if (typeof producto.stock === "number" && cant > producto.stock) {
-      alert(`No hay stock suficiente. Stock disponible: ${producto.stock}.`);
-      return;
-    }
-
-    const idx = carrito.findIndex(it => String(it.codigo) === String(producto.codigo));
-    if (idx >= 0) {
-      const posible = carrito[idx].cantidad + cant;
-      if (typeof producto.stock === "number" && posible > producto.stock) {
-        alert(`No puedes superar el stock (${producto.stock}).`);
-        return;
-      }
-      carrito[idx].cantidad = posible;
-    } else {
-      carrito.push({
-        codigo: producto.codigo,
-        nombre: producto.nombre || "Producto",
-        precio: Number(producto.precio) || 0,
-        cantidad: cant,
-        imagen: (producto.imagen && producto.imagen) || mainImg || "",
-      });
-    }
-    guardarCarrito(carrito);
-    alert("Producto añadido al carrito.");
-    // navigate("/carrito");
   }
 
   return (
@@ -186,9 +251,10 @@ export default function ProductoDetalle() {
                   >
                     <img
                       src={
-                        p && p.imagen ? require(`../assets/images/${p.imagen}`) : require(`../assets/images/logo_mercado.jpg`)
+                        p && p.imagen
+                          ? require(`../assets/images/${p.imagen}`)
+                          : require(`../assets/images/logo_mercado.jpg`)
                       }
-                      
                       className="card-img-top"
                       alt={p.nombre || "Producto"}
                       style={{ objectFit: "cover", height: 160 }}

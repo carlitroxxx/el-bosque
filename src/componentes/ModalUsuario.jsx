@@ -14,7 +14,6 @@ const ModalUsuario = ({ isOpen, onClose, onGuardar, usuarioEditar }) => {
   const [errorMsg, setErrorMsg] = useState("");
   const [comunas, setComunas] = useState([]);
 
-  // Datos de regiones y comunas de Chile
   const regionesYComunas = {
     "Arica y Parinacota": ["Arica", "Camarones", "Putre", "General Lagos"],
     "Tarapacá": ["Iquique", "Alto Hospicio", "Pozo Almonte", "Camiña", "Colchane", "Huara", "Pica"],
@@ -34,25 +33,22 @@ const ModalUsuario = ({ isOpen, onClose, onGuardar, usuarioEditar }) => {
     "Magallanes": ["Punta Arenas", "Laguna Blanca", "Río Verde", "San Gregorio", "Cabo de Hornos", "Antártica", "Porvenir", "Primavera", "Timaukel", "Natales", "Torres del Paine"]
   };
 
-  // Cargar datos cuando se abre el modal
   useEffect(() => {
     if (usuarioEditar) {
       setForm({
         nombre: usuarioEditar.nombre,
         correo: usuarioEditar.correo,
-        contrasena: "", // nunca traemos password del backend
+        contrasena: "", 
         telefono: usuarioEditar.telefono || "",
         region: usuarioEditar.region || "",
         comuna: usuarioEditar.comuna || "",
         rol: usuarioEditar.rol || "CLIENTE",
       });
       
-      // Cargar comunas si ya hay una región seleccionada
       if (usuarioEditar.region && regionesYComunas[usuarioEditar.region]) {
         setComunas(regionesYComunas[usuarioEditar.region]);
       }
     } else {
-      // Nuevo usuario
       setForm({
         nombre: "",
         correo: "",
@@ -71,13 +67,12 @@ const ModalUsuario = ({ isOpen, onClose, onGuardar, usuarioEditar }) => {
     const { name, value } = e.target;
     
     if (name === "region") {
-      // Cuando cambia la región, actualizar las comunas y resetear la comuna seleccionada
       const nuevasComunas = regionesYComunas[value] || [];
       setComunas(nuevasComunas);
       setForm({
         ...form,
         region: value,
-        comuna: "" // Resetear comuna cuando cambia la región
+        comuna: "" 
       });
     } else {
       setForm({ ...form, [name]: value });
@@ -127,7 +122,6 @@ const ModalUsuario = ({ isOpen, onClose, onGuardar, usuarioEditar }) => {
       const usuarioValidado = validar();
       await onGuardar(usuarioValidado);
       
-      // Si todo salió bien, limpiamos y cerramos
       setForm({
         nombre: "",
         correo: "",

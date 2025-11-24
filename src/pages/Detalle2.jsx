@@ -12,10 +12,11 @@ const DetalleBlog2 = () => {
       <main className="container my-5 flex-grow-1">
         <div className="row justify-content-center">
           <div className="col-md-8">
-            {/* Título */}
-            <h2 className="fw-bold mb-3">Porque tus mascotas también son parte de la familia</h2>
 
-            {/* Descripción */}
+            <h2 className="fw-bold mb-3">
+              Porque tus mascotas también son parte de la familia
+            </h2>
+
             <p className="text-muted">
               En respuesta a las necesidades de nuestros clientes, inauguramos oficialmente la nueva sección dedicada a
               mascotas en Minimercado El Bosque.
@@ -24,24 +25,20 @@ const DetalleBlog2 = () => {
               Sabemos lo importante que son las mascotas en cada hogar, y queremos ser tu aliado para que tengan una vida
               feliz y saludable.
             </p>
+
             <p className="text-muted">
               ¡Ven a conocernos y aprovecha las promociones de lanzamiento durante todo este mes!
             </p>
 
-            {/* Imagen debajo del texto */}
             <div className="text-center my-4">
               <img 
-                src={alimentosMascotas} 
-                className="img-fluid rounded shadow" 
+                src={alimentosMascotas}
+                className="img-fluid rounded shadow"
                 alt="Detalle Blog 2"
-                style={{ 
-                  maxWidth: "500px", 
-                  height: "auto" 
-                }} 
+                style={{ maxWidth: "500px" }}
               />
             </div>
 
-            {/* Botón para volver */}
             <Link to="/blogs" className="btn btn-outline-secondary">
               Volver a Blogs
             </Link>

@@ -1,16 +1,23 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("usuario"));
+    if (!user || user.rol !== "ADMINISTRADOR") {
+      navigate("/login");
+    }
+  }, [navigate]);
+
   const opciones = [
-  { titulo: "📊 Dashboard", ruta: "/dashboard" },
-  { titulo: "📦 Productos", ruta: "/productos" },
-  { titulo: "📬 Mensajes", ruta: "/mensajes" },
-  { titulo: "👤 Usuarios", ruta: "/usuarios" },
-  { titulo: "🏪 Vista Cliente", ruta: "/" }
-];
+    { titulo: "📊 Dashboard", ruta: "/dashboard" },
+    { titulo: "📦 Productos", ruta: "/productos" },
+    { titulo: "📬 Mensajes", ruta: "/mensajes" },
+    { titulo: "👤 Usuarios", ruta: "/usuarios" },
+    { titulo: "🏪 Vista Cliente", ruta: "/" },
+  ];
 
   return (
     <div className="bg-light min-vh-100 py-5">
@@ -27,8 +34,13 @@ const Dashboard = () => {
                   cursor: "pointer",
                   transition: "transform 0.2s ease-in-out",
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}>
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.transform = "scale(1.05)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.transform = "scale(1)")
+                }
+              >
                 <h4>{op.titulo}</h4>
               </div>
             </div>

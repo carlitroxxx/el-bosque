@@ -18,21 +18,49 @@ import Productos from "./pages/vista-admin/Productos";
 import Usuarios from "./pages/vista-admin/Usuarios";
 import MensajesContacto from "./pages/vista-admin/MensajesContacto";
 
-import { sesionActual, buscarUsuarioPorCorreo } from "./utils/auth";
 import Carrito from "./pages/Carrito";
 import ResultadoPago from "./pages/ResultadoPago";
 
-function RequiereRol({ roles, children }) {
-  const ses = sesionActual();
-  const location = useLocation();
+/**
+ * Lee el usuario actual desde localStorage.
+ * Esperamos algo como:
+ *   localStorage["usuario"] = JSON.stringify({ id, nombre, email, rol: "admin", ... })
+ */
+function getUsuarioActual() {
+  try {
+    const raw = localStorage.getItem("usuario");
+    if (!raw) return null;
+    const u = JSON.parse(raw);
+    if (!u || typeof u !== "object") return null;
+    return u;
+  } catch {
+    return null;
+  }
+}
 
-  if (!ses?.logeado) {
+/**
+ * Componente de protección por rol.
+ * - Si no hay usuario => redirige a /login
+ * - Si el rol no está en la lista => redirige a /
+ */
+function RequiereRol({ roles, children }) {
+  const location = useLocation();
+  const usuario = getUsuarioActual();
+  const logeado = !!usuario;
+
+  if (!logeado) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  const usuario = buscarUsuarioPorCorreo(ses.correo);
-  const rolUsuario = usuario?.rol;
-  if (!rolUsuario || !roles.includes(rolUsuario)) {
+  const rolUsuario = usuario?.rol
+    ? String(usuario.rol).toLowerCase()
+    : null;
+
+  const rolesNormalizados = (roles || []).map((r) =>
+    String(r).toLowerCase()
+  );
+
+  if (!rolUsuario || !rolesNormalizados.includes(rolUsuario)) {
     return <Navigate to="/" replace />;
   }
 
@@ -42,6 +70,7 @@ function RequiereRol({ roles, children }) {
 export default function Rutas() {
   return (
     <Routes>
+      {/* Rutas públicas */}
       <Route path="/" element={<Home />} />
       <Route path="/catalogo" element={<Catalogo />} />
       <Route path="/nosotros" element={<Nosotros />} />
@@ -55,7 +84,7 @@ export default function Rutas() {
       <Route path="/login" element={<Login />} />
       <Route path="/registro" element={<Registro />} />
 
-      {/*Rutas exclusivas de rol admin*/}
+      {/* Rutas exclusivas de rol admin */}
       <Route
         path="/dashboard"
         element={
@@ -80,7 +109,6 @@ export default function Rutas() {
           </RequiereRol>
         }
       />
-
       <Route
         path="/mensajes"
         element={
@@ -90,6 +118,7 @@ export default function Rutas() {
         }
       />
 
+      {/* Cualquier otra ruta → home */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

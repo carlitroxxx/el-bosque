@@ -15,20 +15,21 @@ const Productos = () => {
 
   const [cargando, setCargando] = useState(false);
 
-  // Cargar productos desde el backend al iniciar
+  const token = localStorage.getItem("token");
+
+  // Cargar productos desde backend
   useEffect(() => {
     const fetchProductos = async () => {
       setCargando(true);
       try {
-        const res = await fetch("http://localhost:3001/api/productos");
-        if (!res.ok) {
-          throw new Error("Error obteniendo productos desde el servidor.");
-        }
+        const res = await fetch(API_URL);
+        if (!res.ok) throw new Error("Error obteniendo productos");
+
         const data = await res.json();
         setProductos(data);
-      } catch (error) {
-        console.error(error);
-        alert(error.message || "No se pudieron cargar los productos.");
+      } catch (err) {
+        console.error(err);
+        alert(err.message || "No se pudo cargar la lista de productos.");
       } finally {
         setCargando(false);
       }
@@ -37,16 +38,15 @@ const Productos = () => {
     fetchProductos();
   }, []);
 
-  // Crear / actualizar producto en el backend
+  // Crear o actualizar producto
   const guardarProducto = async (producto) => {
-    // producto ya viene validado desde el modal, pero normalizamos por si acaso
     const normalizado = {
       ...producto,
       precio: Number(producto.precio),
       stock: Number(producto.stock),
       stockCritico:
-        producto.stockCritico === null ||
         producto.stockCritico === "" ||
+        producto.stockCritico === null ||
         producto.stockCritico === undefined
           ? null
           : Number(producto.stockCritico),
@@ -55,46 +55,47 @@ const Productos = () => {
     try {
       let res;
 
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`, 
+      };
+
       if (productoEditar) {
-        // UPDATE
+        // EDITAR
         res = await fetch(
           `${API_URL}/${encodeURIComponent(productoEditar.codigo)}`,
           {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers,
             body: JSON.stringify(normalizado),
           }
         );
       } else {
-        // CREATE
+        // CREAR
         res = await fetch(API_URL, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify(normalizado),
         });
       }
 
       if (!res.ok) {
-        let errorMsg = "Error guardando producto.";
+        let msg = "Error guardando producto.";
         try {
           const data = await res.json();
-          if (data?.error) errorMsg = data.error;
-        } catch (e) {
-          // ignore
-        }
-        throw new Error(errorMsg);
+          if (data?.error) msg = data.error;
+        } catch {}
+        throw new Error(msg);
       }
 
       const saved = await res.json();
 
       setProductos((prev) => {
         if (productoEditar) {
-          // reemplaza el producto editado
           return prev.map((p) =>
             String(p.codigo) === String(saved.codigo) ? saved : p
           );
         } else {
-          // agrega el nuevo
           return [...prev, saved];
         }
       });
@@ -102,19 +103,15 @@ const Productos = () => {
       setModalAbierto(false);
       setProductoEditar(null);
 
-      // Alerta si stock <= stock crítico
       if (
         saved.stockCritico !== null &&
-        saved.stockCritico !== undefined &&
-        Number.isFinite(Number(saved.stockCritico)) &&
         Number(saved.stock) <= Number(saved.stockCritico)
       ) {
-        alert("El stock actual es menor o igual al stock crítico.");
+        alert("Advertencia: stock actual está por debajo del stock crítico.");
       }
-    } catch (error) {
-      console.error(error);
-      // IMPORTANTE: lanzamos el error para que el modal lo muestre
-      throw error;
+    } catch (err) {
+      console.error(err);
+      throw err; 
     }
   };
 
@@ -136,18 +133,19 @@ const Productos = () => {
         `${API_URL}/${encodeURIComponent(productoAEliminar.codigo)}`,
         {
           method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
       if (!res.ok) {
-        let errorMsg = "Error eliminando producto.";
+        let msg = "No se pudo eliminar el producto";
         try {
           const data = await res.json();
-          if (data?.error) errorMsg = data.error;
-        } catch (e) {
-          // ignore
-        }
-        throw new Error(errorMsg);
+          if (data?.error) msg = data.error;
+        } catch {}
+        throw new Error(msg);
       }
 
       setProductos((prev) =>
@@ -155,9 +153,9 @@ const Productos = () => {
           (p) => String(p.codigo) !== String(productoAEliminar.codigo)
         )
       );
-    } catch (error) {
-      console.error(error);
-      alert(error.message || "No se pudo eliminar el producto.");
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Error eliminando producto.");
     } finally {
       setProductoAEliminar(null);
       setShowConfirm(false);
@@ -223,8 +221,6 @@ const Productos = () => {
         <div
           className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
           style={{ background: "rgba(0,0,0,0.5)", zIndex: 2000 }}
-          role="dialog"
-          aria-modal="true"
         >
           <div
             className="bg-white rounded-3 shadow p-4"
@@ -234,8 +230,7 @@ const Productos = () => {
             <p className="mb-4">
               ¿Seguro que quieres eliminar el producto{" "}
               <strong>{productoAEliminar?.nombre}</strong> (código{" "}
-              <code>{productoAEliminar?.codigo}</code>)? Esta acción no se
-              puede deshacer.
+              <code>{productoAEliminar?.codigo}</code>)?
             </p>
             <div className="d-flex justify-content-end gap-2">
               <button className="btn btn-light" onClick={cancelarEliminar}>

@@ -14,19 +14,26 @@ const ProductoCard = ({ producto, onAgregar }) => {
           className="card-img-top"
           alt={producto.nombre}
           onError={(e) => {
-            e.target.src = "../assets/images/logo_mercado.jpg"; 
+            e.target.src = require("../assets/images/logo_mercado.jpg");
           }}
         />
         <div className="card-body text-center">
           <h5 className="card-title">{producto.nombre}</h5>
-          <p className="card-text">${Number(producto.precio).toLocaleString("es-CL")}</p>
+          <p className="card-text">
+            ${Number(producto.precio).toLocaleString("es-CL")}
+          </p>
+
           <button
             className="btn btn-primary w-100 mb-2"
             onClick={() => onAgregar && onAgregar(producto)}
           >
             Agregar
           </button>
-          <Link to={`/producto/${producto.codigo}`} className="btn btn-outline-primary">
+
+          <Link
+            to={`/producto/${producto.codigo}`}
+            className="btn btn-outline-primary"
+          >
             Ver detalle
           </Link>
         </div>

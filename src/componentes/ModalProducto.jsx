@@ -99,10 +99,8 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
     try {
       setErrorMsg("");
       const producto = validar();
-      // Esperamos a que el padre guarde en el backend
       await onGuardar(producto);
 
-      // Si todo salió bien, limpiamos y cerramos
       setCodigo("");
       setNombre("");
       setDescripcion("");
@@ -113,7 +111,6 @@ const ModalProducto = ({ isOpen, onClose, onGuardar, productoEditar }) => {
       setImagen("");
       onClose();
     } catch (err) {
-      // Si el backend devolvió un error, lo mostramos aquí
       setErrorMsg(err?.message || "Error guardando el producto.");
     }
   };

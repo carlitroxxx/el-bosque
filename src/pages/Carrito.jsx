@@ -4,11 +4,13 @@ import Footer from "../componentes/Footer";
 import { regiones } from "../datos/regiones-comunas";
 import { useNavigate } from "react-router-dom";
 
+const API = "http://localhost:3001/api";
+
 const Carrito = () => {
   const navigate = useNavigate();
 
   const [carritoId, setCarritoId] = useState(null);
-  const [carrito, setCarrito] = useState([]); // items normalizados para el front
+  const [carrito, setCarrito] = useState([]); 
   const [cargando, setCargando] = useState(true);
 
   const [datosEnvio, setDatosEnvio] = useState({
@@ -21,7 +23,6 @@ const Carrito = () => {
   });
   const [comunas, setComunas] = useState([]);
 
-  // Normalizar respuesta de backend a formato para el front
   const normalizarCarritoDesdeAPI = (data) => {
     const items = data.CarritoItems || [];
     const normalizado = items.map((item) => ({
@@ -38,11 +39,11 @@ const Carrito = () => {
     setCarrito(normalizado);
   };
 
-  // Cargar carrito desde backend
   useEffect(() => {
     const usuario = JSON.parse(localStorage.getItem("usuario"));
+    const token = localStorage.getItem("token");
 
-    if (!usuario || !usuario.id) {
+    if (!usuario || !token) {
       alert("Debes iniciar sesión para ver tu carrito.");
       navigate("/login");
       return;
@@ -51,11 +52,12 @@ const Carrito = () => {
     const fetchCarrito = async () => {
       setCargando(true);
       try {
-        // POST /api/carrito para obtener o crear carrito activo
-        const res = await fetch("http://localhost:3001/api/carrito", {
+        const res = await fetch(`${API}/carrito`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ usuarioId: usuario.id }),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         });
 
         if (!res.ok) {
@@ -95,11 +97,21 @@ const Carrito = () => {
     const item = carrito.find((p) => p.codigo === codigo);
     if (!item) return;
 
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Sesión expirada. Vuelve a iniciar sesión.");
+      navigate("/login");
+      return;
+    }
+
     try {
       const res = await fetch(
-        `http://localhost:3001/api/carrito/${carritoId}/items/${item.itemId}`,
+        `${API}/carrito/${carritoId}/items/${item.itemId}`,
         {
           method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
@@ -112,11 +124,10 @@ const Carrito = () => {
         throw new Error(msg);
       }
 
-      const data = await res.json(); // { carrito: carritoActualizado, total }
+      const data = await res.json(); 
       if (data.carrito) {
         normalizarCarritoDesdeAPI(data.carrito);
       } else {
-        // fallback: sacar el item localmente
         setCarrito((prev) =>
           prev.filter((p) => p.itemId !== item.itemId)
         );
@@ -132,7 +143,6 @@ const Carrito = () => {
     const item = carrito.find((p) => p.codigo === codigo);
     if (!item) return;
 
-    // Validar stock
     if (
       typeof item.stock === "number" &&
       nuevaCantidad > item.stock
@@ -141,12 +151,22 @@ const Carrito = () => {
       return;
     }
 
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Sesión expirada. Vuelve a iniciar sesión.");
+      navigate("/login");
+      return;
+    }
+
     try {
       const res = await fetch(
-        `http://localhost:3001/api/carrito/${carritoId}/items/${item.itemId}`,
+        `${API}/carrito/${carritoId}/items/${item.itemId}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({ cantidad: nuevaCantidad }),
         }
       );
@@ -160,7 +180,7 @@ const Carrito = () => {
         throw new Error(msg);
       }
 
-      const data = await res.json(); // { carrito: carritoActualizado, total }
+      const data = await res.json();
       if (data.carrito) {
         normalizarCarritoDesdeAPI(data.carrito);
       }
@@ -172,20 +192,35 @@ const Carrito = () => {
 
   const vaciarCarrito = async () => {
     if (!carritoId) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Sesión expirada. Vuelve a iniciar sesión.");
+      navigate("/login");
+      return;
+    }
+
     try {
-      // No tienes endpoint para vaciar, así que eliminamos ítem por ítem
-      await Promise.all(
-        carrito.map((item) =>
-          fetch(
-            `http://localhost:3001/api/carrito/${carritoId}/items/${item.itemId}`,
-            { method: "DELETE" }
-          )
-        )
-      );
+      const res = await fetch(`${API}/carrito/${carritoId}/vaciar`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        let msg = "No se pudo vaciar el carrito.";
+        try {
+          const data = await res.json();
+          if (data?.error) msg = data.error;
+        } catch {}
+        throw new Error(msg);
+      }
+
       setCarrito([]);
     } catch (error) {
       console.error(error);
-      alert("No se pudo vaciar el carrito por completo.");
+      alert(error.message || "No se pudo vaciar el carrito por completo.");
     }
   };
 
@@ -202,10 +237,12 @@ const Carrito = () => {
 
   const finalizarCompra = async (e) => {
     e.preventDefault();
+
     if (carrito.length === 0) {
       alert("Tu carrito está vacío.");
       return;
     }
+
     for (const key in datosEnvio) {
       if (datosEnvio[key] === "") {
         alert(`Por favor, complete el campo: ${key}`);
@@ -213,49 +250,77 @@ const Carrito = () => {
       }
     }
 
-    const ordenData = {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Debes iniciar sesión para finalizar la compra.");
+      navigate("/login");
+      return;
+    }
+
+    const ordenView = {
       productos: carrito,
       total: calcularTotal(),
       datosEnvio: datosEnvio,
     };
 
-    // Simulación de error de pago
     if (datosEnvio.nombre.toLowerCase().includes("error")) {
       console.log("Simulando pago fallido...");
       navigate("/resultado-pago", {
-        state: { orden: ordenData, exito: false },
+        state: { orden: ordenView, exito: false },
       });
       return;
     }
 
     console.log("Procesando pago exitoso...");
 
-    // Guardar orden en localStorage (a falta de endpoint /api/ordenes)
-    const ordenesGuardadas =
-      JSON.parse(localStorage.getItem("ordenes")) || [];
-    const nuevaOrden = {
-      ...ordenData,
-      id: Date.now(),
-      fecha: new Date().toISOString(),
-    };
-    ordenesGuardadas.push(nuevaOrden);
-    localStorage.setItem("ordenes", JSON.stringify(ordenesGuardadas));
+    try {
+      const res = await fetch(`${API}/ordenes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          carritoId,
+          datosEnvio,
+        }),
+      });
 
-    // Vaciar carrito en backend y front
-    await vaciarCarrito();
+      if (!res.ok) {
+        let msg = "No se pudo crear la orden.";
+        try {
+          const data = await res.json();
+          if (data?.error) msg = data.error;
+        } catch {}
+        throw new Error(msg);
+      }
 
-    navigate("/resultado-pago", {
-      state: { orden: nuevaOrden, exito: true },
-    });
+      const ordenCreada = await res.json();
 
-    setDatosEnvio({
-      nombre: "",
-      email: "",
-      telefono: "",
-      region: "",
-      comuna: "",
-      direccion: "",
-    });
+      const nuevaOrden = {
+        ...ordenView,
+        id: ordenCreada.id,
+        fecha: ordenCreada.fecha,
+      };
+
+      await vaciarCarrito();
+
+      navigate("/resultado-pago", {
+        state: { orden: nuevaOrden, exito: true },
+      });
+
+      setDatosEnvio({
+        nombre: "",
+        email: "",
+        telefono: "",
+        region: "",
+        comuna: "",
+        direccion: "",
+      });
+    } catch (error) {
+      console.error(error);
+      alert(error.message || "Ocurrió un problema al procesar el pago.");
+    }
   };
 
   return (
@@ -264,7 +329,6 @@ const Carrito = () => {
 
       <main className="container mt-5 mb-5 flex-grow-1">
         <div className="row">
-          {/* Lista de productos en el carrito */}
           <div className="col-md-8">
             <h3 className="fw-bold mb-4 text-center">Lista de productos</h3>
 
@@ -318,8 +382,6 @@ const Carrito = () => {
               </div>
             )}
           </div>
-
-          {/* Resumen de carrito y cantidades */}
           <div className="col-md-4">
             <h3 className="fw-bold mb-4 text-center">Carrito de Compras</h3>
             <div className="card shadow-sm">

@@ -2,35 +2,61 @@ import React, { useState } from "react";
 import Navbar from "../componentes/Navbar";
 import Footer from "../componentes/Footer";
 import logo from "../assets/images/logo_mercado.jpg";
-import { mensajesContacto } from "../utils/auth";
+
+const API_URL = "http://localhost:3001/api/mensajes";
 
 const Contacto = () => {
   const [formData, setFormData] = useState({
     nombre: "",
     correo: "",
-    contenido: ""
+    contenido: "",
   });
+  const [enviando, setEnviando] = useState(false);
 
   const handleChange = (e) => {
     const { id, value } = e.target;
-    setFormData(prevState => ({
+    setFormData((prevState) => ({
       ...prevState,
-      [id]: value
+      [id]: value,
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Aquí puedes agregar la lógica para enviar el formulario
-    console.log("Datos del formulario:", formData);
-    alert("Mensaje enviado correctamente");
-    
-    // Limpiar formulario
-    setFormData({
-      nombre: "",
-      correo: "",
-      contenido: ""
-    });
+    setEnviando(true);
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: formData.nombre,
+          email: formData.correo,
+          contenido: formData.contenido,
+        }),
+      });
+
+      if (!res.ok) {
+        let msg = "No fue posible enviar el mensaje.";
+        try {
+          const data = await res.json();
+          if (data?.error) msg = data.error;
+        } catch {}
+        throw new Error(msg);
+      }
+
+      alert("Mensaje enviado correctamente");
+
+      setFormData({
+        nombre: "",
+        correo: "",
+        contenido: "",
+      });
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Error al enviar el mensaje.");
+    } finally {
+      setEnviando(false);
+    }
   };
 
   return (
@@ -38,21 +64,21 @@ const Contacto = () => {
       <Navbar />
 
       <main className="container my-5 flex-grow-1">
-        {/* Imagen superior */}
         <div className="text-center mb-3">
-          <div className="border d-inline-block" style={{width: "120px", height: "120px", backgroundColor: "#f8f9fa"}}>
-            <img 
-              src={logo} 
+          <div
+            className="border d-inline-block"
+            style={{ width: "120px", height: "120px", backgroundColor: "#f8f9fa" }}
+          >
+            <img
+              src={logo}
               alt="Logo Tienda"
-              style={{maxWidth: "100%", maxHeight: "100%", objectFit: "contain"}} 
+              style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
             />
           </div>
         </div>
 
-        {/* Nombre empresa */}
         <h2 className="text-center fw-bold mb-4">Minimercado El Bosque</h2>
 
-        {/* Formulario */}
         <div className="row justify-content-center">
           <div className="col-md-6">
             <div className="card shadow">
@@ -61,51 +87,59 @@ const Contacto = () => {
               </div>
               <div className="card-body bg-light">
                 <form onSubmit={handleSubmit}>
-                  {/* Nombre completo */}
                   <div className="mb-3">
-                    <label htmlFor="nombre" className="form-label fw-semibold">Nombre Completo</label>
-                    <input 
-                      type="text" 
-                      className="form-control" 
+                    <label htmlFor="nombre" className="form-label fw-semibold">
+                      Nombre Completo
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
                       id="nombre"
                       value={formData.nombre}
                       onChange={handleChange}
-                      placeholder="Escribe tu nombre completo" 
+                      placeholder="Escribe tu nombre completo"
                       required
                     />
                   </div>
 
-                  {/* Correo */}
                   <div className="mb-3">
-                    <label htmlFor="correo" className="form-label fw-semibold">Correo</label>
-                    <input 
-                      type="email" 
-                      className="form-control" 
-                      id="correo" 
+                    <label htmlFor="correo" className="form-label fw-semibold">
+                      Correo
+                    </label>
+                    <input
+                      type="email"
+                      className="form-control"
+                      id="correo"
                       value={formData.correo}
                       onChange={handleChange}
-                      placeholder="ejemplo@correo.com" 
+                      placeholder="ejemplo@correo.com"
                       required
                     />
                   </div>
 
-                  {/* Contenido */}
                   <div className="mb-3">
-                    <label htmlFor="contenido" className="form-label fw-semibold">Contenido</label>
-                    <textarea 
-                      className="form-control" 
-                      id="contenido" 
+                    <label htmlFor="contenido" className="form-label fw-semibold">
+                      Contenido
+                    </label>
+                    <textarea
+                      className="form-control"
+                      id="contenido"
                       rows="4"
                       value={formData.contenido}
                       onChange={handleChange}
-                      placeholder="Escribe tu mensaje" 
+                      placeholder="Escribe tu mensaje"
                       required
                     />
                   </div>
 
-                  {/* Botón */}
                   <div className="text-center">
-                    <button type="submit" className="btn btn-outline-dark px-4">ENVIAR MENSAJE</button>
+                    <button
+                      type="submit"
+                      className="btn btn-outline-dark px-4"
+                      disabled={enviando}
+                    >
+                      {enviando ? "ENVIANDO..." : "ENVIAR MENSAJE"}
+                    </button>
                   </div>
                 </form>
               </div>

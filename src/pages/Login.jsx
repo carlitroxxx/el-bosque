@@ -1,10 +1,10 @@
-// src/pages/Login.jsx
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../componentes/Navbar";
 import Footer from "../componentes/Footer";
 import logo from "../assets/images/logo_mercado.jpg";
-import { iniciarSesion, sesionActual, buscarUsuarioPorCorreo } from "../utils/auth";
+
+const API_URL = "http://localhost:3001/api";
 
 export default function Login() {
   const [form, setForm] = useState({ correo: "", contrasena: "" });
@@ -13,18 +13,41 @@ export default function Login() {
   const loc = useLocation();
   const volverA = loc.state?.from?.pathname || "/";
 
-  const onChange = (e) => setForm({ ...form, [e.target.id]: e.target.value });
+  const onChange = (e) =>
+    setForm({ ...form, [e.target.id]: e.target.value });
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    try {
-      // --- lógica original (CÓDIGO 1) ---
-      iniciarSesion(form);
-      const ses = sesionActual();
-      const u = ses?.logeado ? buscarUsuarioPorCorreo(ses.correo) : null;
 
-      if (u?.rol === "admin") {
+    try {
+      const res = await fetch(`${API_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: form.correo,
+          password: form.contrasena,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Correo o contraseña incorrectos.");
+      }
+
+      const data = await res.json();
+      const { token, usuario } = data;
+
+      if (token) {
+        localStorage.setItem("token", token);
+      }
+
+      if (usuario) {
+        localStorage.setItem("usuario", JSON.stringify(usuario));
+      }
+
+      const rol = (usuario?.rol || "").toUpperCase();
+
+      if (rol === "ADMIN" || rol === "ADMINISTRADOR") {
         nav("/dashboard", { replace: true });
       } else {
         nav(volverA, { replace: true });
@@ -42,7 +65,6 @@ export default function Login() {
         <div className="card shadow" style={{ maxWidth: 420, width: "100%" }}>
           <div className="card-body p-4">
 
-            {/* Logo + nombre tienda */}
             <div className="text-center mb-3">
               <img
                 src={logo}
@@ -55,14 +77,12 @@ export default function Login() {
 
             <h4 className="text-center mb-3">Inicio de sesión</h4>
 
-            {/* Alert de error (si corresponde) */}
             {error && (
               <div className="alert alert-danger py-2" role="alert">
                 {error}
               </div>
             )}
 
-            {/* Formulario */}
             <form onSubmit={onSubmit} noValidate>
               <div className="mb-3">
                 <label htmlFor="correo" className="form-label fw-semibold small text-uppercase">

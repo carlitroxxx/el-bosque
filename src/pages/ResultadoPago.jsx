@@ -16,7 +16,8 @@ const ResultadoPago = () => {
 
   if (!orden) return null;
 
-  const numeroOrden = Math.floor(100000 + Math.random() * 900000);
+  const numeroOrden = orden.id;
+
   const esExitoso = exito === true;
 
   return (
@@ -27,7 +28,7 @@ const ResultadoPago = () => {
           <div className="col-md-8 text-center">
             <div className="card shadow-sm">
               <div className="card-body p-5">
-                {/* Encabezado dinámico */}
+
                 {esExitoso ? (
                   <>
                     <h1 className="text-success display-1">✓</h1>
@@ -35,6 +36,7 @@ const ResultadoPago = () => {
                     <p className="text-muted">
                       Tu pedido ha sido confirmado y se está preparando para el envío.
                     </p>
+
                     <p className="fw-bold fs-5">N° de orden: #{numeroOrden}</p>
                   </>
                 ) : (
@@ -49,7 +51,6 @@ const ResultadoPago = () => {
 
                 <hr className="my-4" />
 
-                {/* Resumen del pedido */}
                 <div className="text-start mb-4">
                   <h5 className="mb-3">
                     {esExitoso ? "Resumen del Pedido" : "Resumen del Intento de Compra"}
@@ -57,7 +58,7 @@ const ResultadoPago = () => {
                   <ul className="list-group">
                     {orden.productos.map((item) => (
                       <li
-                        key={item.id}
+                        key={item.id || item.productoId}
                         className="list-group-item d-flex justify-content-between align-items-center"
                       >
                         <span>
@@ -69,6 +70,7 @@ const ResultadoPago = () => {
                         </span>
                       </li>
                     ))}
+
                     <li className="list-group-item d-flex justify-content-between align-items-center fw-bold">
                       <span>Total</span>
                       <span>${orden.total.toLocaleString("es-CL")}</span>
@@ -76,7 +78,6 @@ const ResultadoPago = () => {
                   </ul>
                 </div>
 
-                {/* Datos de despacho */}
                 <div className="text-start">
                   <h5 className="mb-3">Información de Despacho</h5>
                   <p className="mb-1">
@@ -103,7 +104,6 @@ const ResultadoPago = () => {
 
                 <hr className="my-4" />
 
-                {/* Botones dinámicos */}
                 {esExitoso ? (
                   <Link to="/" className="btn btn-primary btn-lg">
                     Volver al Inicio
@@ -113,6 +113,7 @@ const ResultadoPago = () => {
                     Volver al Carrito y Reintentar
                   </Link>
                 )}
+
               </div>
             </div>
           </div>

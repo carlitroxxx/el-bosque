@@ -2,20 +2,104 @@ import React, { useEffect, useState } from "react";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Slider from "react-slick";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../componentes/Navbar";
 import Footer from "../componentes/Footer";
 import letrero from "../assets/images/letrero_con_alimento_para_mascotas.png";
 import carroLogo from "../assets/images/logo_carro.png";
 import ProductoDestacado from "../componentes/ProductoDestacado";
 
+const API = "http://localhost:3001/api";
+
 function Home() {
   const [productosDestacados, setProductosDestacados] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const productosGuardados = JSON.parse(localStorage.getItem("productos")) || [];
-    setProductosDestacados(productosGuardados.slice(0, 6));
+    const fetchDestacados = async () => {
+      try {
+        const res = await fetch(`${API}/productos`);
+        if (!res.ok) throw new Error("No se pudieron cargar los productos.");
+        const data = await res.json();
+        setProductosDestacados(data.slice(0, 6));
+      } catch (error) {
+        console.error(error);
+        setProductosDestacados([]);
+      }
+    };
+
+    fetchDestacados();
   }, []);
+
+  const obtenerOCrearCarrito = async (usuario, token) => {
+    const res = await fetch(`${API}/carrito`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ usuarioId: usuario.id }),
+    });
+
+    if (!res.ok) {
+      let msg = "Error obteniendo/creando carrito.";
+      try {
+        const data = await res.json();
+        if (data?.error) msg = data.error;
+      } catch {}
+      throw new Error(msg);
+    }
+
+    const data = await res.json();
+    localStorage.setItem("carritoId", data.id);
+    return data;
+  };
+
+  const agregarAlCarrito = async (producto) => {
+    const usuario = JSON.parse(localStorage.getItem("usuario"));
+    const token = localStorage.getItem("token");
+
+    if (!usuario || !token) {
+      alert("Debes iniciar sesión para agregar productos al carrito.");
+      navigate("/login");
+      return;
+    }
+
+    try {
+      let carritoId = localStorage.getItem("carritoId");
+
+      if (!carritoId) {
+        const carrito = await obtenerOCrearCarrito(usuario, token);
+        carritoId = carrito.id;
+      }
+
+      const resItem = await fetch(
+        `${API}/carrito/${carritoId}/items`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ productoId: producto.id, cantidad: 1 }),
+        }
+      );
+
+      if (!resItem.ok) {
+        let msg = "Error agregando producto al carrito.";
+        try {
+          const dataErr = await resItem.json();
+          if (dataErr?.error) msg = dataErr.error;
+        } catch {}
+        throw new Error(msg);
+      }
+
+      alert(`${producto.nombre} agregado al carrito`);
+    } catch (error) {
+      console.error(error);
+      alert(error.message || "No se pudo agregar el producto al carrito.");
+    }
+  };
 
   const settings = {
     dots: true,
@@ -24,14 +108,8 @@ function Home() {
     slidesToShow: 3,
     slidesToScroll: 1,
     responsive: [
-      {
-        breakpoint: 992,
-        settings: { slidesToShow: 2 },
-      },
-      {
-        breakpoint: 576,
-        settings: { slidesToShow: 1 },
-      },
+      { breakpoint: 992, settings: { slidesToShow: 2 } },
+      { breakpoint: 576, settings: { slidesToShow: 1 } },
     ],
   };
 
@@ -76,7 +154,7 @@ function Home() {
 
         {productosDestacados.length === 0 ? (
           <p className="text-center text-muted">
-            No hay productos destacados guardados aún.
+            No hay productos destacados disponibles.
           </p>
         ) : (
           <Slider {...settings}>
@@ -86,6 +164,7 @@ function Home() {
                   producto={p}
                   nombre={p.nombre}
                   descripcion={p.descripcion}
+                  onAgregar={agregarAlCarrito}
                 />
               </div>
             ))}

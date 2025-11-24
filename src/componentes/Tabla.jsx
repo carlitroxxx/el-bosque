@@ -33,7 +33,7 @@ const Tabla = ({ columns, data, onEditar, onEliminar }) => {
                 </button>
                 <button
                   className="btn btn-sm btn-danger"
-                  onClick={() => onEliminar && onEliminar(row.id)}
+                  onClick={() => onEliminar && onEliminar(row)}
                 >
                   Eliminar
                 </button>

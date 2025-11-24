@@ -3,25 +3,23 @@ import Sidebar from "../../componentes/SideBar";
 import Tabla from "../../componentes/Tabla";
 import ModalUsuario from "../../componentes/ModalUsuario";
 
-const API_URL = "http://localhost:3001/api/usuarios"; // ajusta el puerto si es otro
+const API_URL = "http://localhost:3001/api/usuarios";
 
-// Convierte usuario que viene del backend -> forma usada en el front
 const fromApiUser = (u) => ({
   id: u.id,
   nombre: u.nombre,
-  correo: u.email,        // mapeo email -> correo
-  contrasena: "",         // no traemos la password real; dejamos vacío
+  correo: u.email,      
+  contrasena: "",        
   telefono: u.telefono || "",
   region: u.region || "",
   comuna: u.comuna || "",
   rol: u.rol || "CLIENTE",
 });
 
-// Convierte usuario del formulario front -> payload para el backend
 const toApiUser = (u) => ({
   nombre: u.nombre,
-  email: u.correo,            // mapeo correo -> email
-  password: u.contrasena,     // mapeo contrasena -> password
+  email: u.correo,           
+  password: u.contrasena,    
   telefono: u.telefono,
   region: u.region,
   comuna: u.comuna,
@@ -33,16 +31,21 @@ const Usuarios = () => {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [usuarioEditar, setUsuarioEditar] = useState(null);
 
-  // Cargar usuarios desde el backend y, si no hay, crear admin
+  const token = localStorage.getItem("token");
+
   useEffect(() => {
     const cargarUsuarios = async () => {
       try {
-        const res = await fetch(API_URL);
+        const res = await fetch(API_URL, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
         if (!res.ok) throw new Error("Error al obtener usuarios");
         const data = await res.json();
 
         if (data.length === 0) {
-          // Crear admin inicial en el backend
           const adminFront = {
             nombre: "admin",
             correo: "admin@ejemplo.cl",
@@ -55,7 +58,10 @@ const Usuarios = () => {
 
           const resAdmin = await fetch(API_URL, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
             body: JSON.stringify(toApiUser(adminFront)),
           });
 
@@ -73,7 +79,7 @@ const Usuarios = () => {
     };
 
     cargarUsuarios();
-  }, []);
+  }, [token]);
 
   // Crear / Editar usuario
   const guardarUsuario = async (usuarioForm) => {
@@ -83,12 +89,15 @@ const Usuarios = () => {
         const id = usuarioEditar.id;
         const payload = toApiUser({
           ...usuarioForm,
-          rol: usuarioEditar.rol, // mantener el rol previo (o permitir cambiarlo si tu form lo hace)
+          rol: usuarioEditar.rol, 
         });
 
         const res = await fetch(`${API_URL}/${id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, 
+          },
           body: JSON.stringify(payload),
         });
 
@@ -116,7 +125,10 @@ const Usuarios = () => {
 
         const res = await fetch(API_URL, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, 
+          },
           body: JSON.stringify(payload),
         });
 
@@ -142,20 +154,18 @@ const Usuarios = () => {
     }
   };
 
-  // Eliminar usando correo (para no tocar Tabla) -> buscamos su id y llamamos al backend
+  // Eliminar usuario
   const eliminarUsuario = async (dato) => {
     console.log("dato recibido en eliminarUsuario:", dato);
 
     let usuario = null;
 
-    // Si Tabla manda solo un string (correo o id)
     if (typeof dato === "string" || typeof dato === "number") {
       usuario =
         usuarios.find((u) => u.correo === dato) ||
         usuarios.find((u) => String(u.id) === String(dato));
     }
 
-    // Si Tabla manda el objeto fila completo
     if (typeof dato === "object" && dato !== null) {
       usuario =
         usuarios.find((u) => u.id === dato.id) ||
@@ -172,6 +182,9 @@ const Usuarios = () => {
     try {
       const res = await fetch(`${API_URL}/${usuario.id}`, {
         method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`, 
+        },
       });
 
       if (!res.ok) {
@@ -194,7 +207,7 @@ const Usuarios = () => {
   const columnas = [
     { header: "NOMBRE COMPLETO", field: "nombre" },
     { header: "CORREO", field: "correo" },
-    { header: "CONTRASEÑA", field: "contrasena" }, // ahora quedará vacío o ******** si quieres
+    { header: "CONTRASEÑA", field: "contrasena" },
     { header: "TELEFONO", field: "telefono" },
     { header: "REGION", field: "region" },
     { header: "COMUNA", field: "comuna" },
@@ -224,7 +237,7 @@ const Usuarios = () => {
               columns={columnas}
               data={usuarios}
               onEditar={editarUsuario}
-              onEliminar={eliminarUsuario} // sigue recibiendo row.correo desde Tabla
+              onEliminar={eliminarUsuario}
             />
           </div>
         </div>

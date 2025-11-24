@@ -1,20 +1,26 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { sesionActual, cerrarSesion, buscarUsuarioPorCorreo } from "../utils/auth";
 
 export default function Navbar() {
   const navigate = useNavigate();
-  const ses = sesionActual();
-  const conectado = !!ses?.logeado;
 
-  let rol = null;
-  if (conectado) {
-    const u = buscarUsuarioPorCorreo(ses.correo);
-    rol = u?.rol || null;
+  let usuario = null;
+  try {
+    const raw = localStorage.getItem("usuario");
+    usuario = raw ? JSON.parse(raw) : null;
+  } catch {
+    usuario = null;
   }
 
+  const conectado = !!usuario;
+
+  const rol = usuario?.rol ? String(usuario.rol).toLowerCase() : null;
+
   const salir = () => {
-    cerrarSesion();
+    localStorage.removeItem("token");
+    localStorage.removeItem("usuario");
+    localStorage.removeItem("session");
+
     navigate("/login");
   };
 
@@ -43,7 +49,6 @@ export default function Navbar() {
             )}
           </ul>
 
-
           <div className="d-flex">
             <Link to="/carrito" className="btn btn-outline-light me-3">
               <i className="bi bi-cart me-1"></i> Carrito
@@ -56,7 +61,7 @@ export default function Navbar() {
             ) : (
               <>
                 <span className="navbar-text text-white me-3">
-                  Hola, <strong>{ses.nombre}</strong>
+                  Hola, <strong>{usuario?.nombre}</strong>
                 </span>
                 <button className="btn btn-outline-light" onClick={salir}>Salir</button>
               </>

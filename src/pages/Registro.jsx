@@ -1,12 +1,11 @@
-// src/pages/Registro.jsx
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../componentes/Navbar";
 import Footer from "../componentes/Footer";
 import logo from "../assets/images/logo_mercado.jpg";
-import { registrarUsuario, guardarSesion } from "../utils/auth";
 import { comunasPorRegion } from "../data/regiones-comunas";
-import { runValido, limpiarRUN } from "../utils/validadores";
+
+const API_URL = "http://localhost:3001/api";
 
 export default function Registro() {
   const [f, setF] = useState({
@@ -22,7 +21,6 @@ export default function Registro() {
   const [comunas, setComunas] = useState([]);
   const nav = useNavigate();
 
-
   const onChange = (e) => {
     const { id, value } = e.target;
     setF({ ...f, [id]: value });
@@ -32,7 +30,7 @@ export default function Registro() {
     }
   };
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -42,15 +40,29 @@ export default function Registro() {
     }
 
     try {
-      const u = registrarUsuario({
-        correo: f.correo,
-        nombre: f.nombre,
-        contrasena: f.contrasena,
-        telefono: f.telefono,
-        region: f.region,
-        comuna: f.comuna,
+      const res = await fetch(`${API_URL}/registro`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: f.correo,
+          nombre: f.nombre,
+          password: f.contrasena,
+          telefono: f.telefono,
+          region: f.region,
+          comuna: f.comuna,
+        }),
       });
-      guardarSesion(u); // autologin
+
+      if (!res.ok) {
+        throw new Error("No fue posible registrar al usuario.");
+      }
+
+      const data = await res.json();
+      const { token, usuario } = data;
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("usuario", JSON.stringify(usuario));
+
       nav("/", { replace: true });
     } catch (err) {
       setError(err.message || "No fue posible registrar al usuario.");
@@ -65,7 +77,6 @@ export default function Registro() {
         <div className="card shadow" style={{ maxWidth: 520, width: "100%" }}>
           <div className="card-body p-4">
 
-            {/* Logo + nombre tienda */}
             <div className="text-center mb-3">
               <img
                 src={logo}
@@ -78,14 +89,12 @@ export default function Registro() {
 
             <h4 className="text-center mb-3">Crear cuenta</h4>
 
-            {/* Error */}
             {error && (
               <div className="alert alert-danger py-2 mb-3" role="alert">
                 {error}
               </div>
             )}
 
-            {/* Formulario (compacto) */}
             <form onSubmit={onSubmit} noValidate>
               <div className="row g-2">
                 <div className="col-md-6">

@@ -27,35 +27,28 @@ const Blogs = () => {
       <Navbar />
 
       <main className="container mt-5 mb-5 flex-grow-1">
-        {/* Título principal */}
         <h2 className="text-center fw-bold mb-4">NOTICIAS IMPORTANTES</h2>
 
-        {/* Lista de blogs */}
         {blogs.map((blog) => (
           <div key={blog.id} className="row justify-content-center mb-4">
             <div className="col-md-10 p-4 rounded shadow-sm bg-secondary-subtle">
               <div className="row align-items-center">
-                {/* Texto */}
+
                 <div className="col-md-6">
                   <h4 className="fw-bold">{blog.titulo}</h4>
-                  <p className="text-muted">
-                    {blog.descripcion}
-                  </p>
+                  <p className="text-muted">{blog.descripcion}</p>
                   <a href={blog.enlace} className="btn btn-outline-dark">VER</a>
                 </div>
-                {/* Imagen */}
+
                 <div className="col-md-6 d-flex justify-content-center">
                   <img 
                     src={blog.imagen} 
                     alt={blog.titulo} 
                     className="img-fluid rounded shadow-sm"
-                    style={{ 
-                      maxWidth: "300px", 
-                      maxHeight: "200px", 
-                      objectFit: "cover" 
-                    }} 
+                    style={{ maxWidth: "300px", maxHeight: "200px", objectFit: "cover" }} 
                   />
                 </div>
+
               </div>
             </div>
           </div>

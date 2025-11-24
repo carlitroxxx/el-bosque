@@ -23,7 +23,7 @@ const Nosotros = () => {
 
         <div className="text-center my-4">
           <img 
-            src= {letreromascotas} 
+            src={letreromascotas} 
             style={{ maxWidth: "40%" }} 
             className="img-fluid rounded shadow" 
             alt="Imagen de la empresa" 
