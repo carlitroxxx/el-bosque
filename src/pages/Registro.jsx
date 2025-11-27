@@ -95,7 +95,7 @@ export default function Registro() {
               </div>
             )}
 
-            <form onSubmit={onSubmit} noValidate>
+            <form onSubmit={onSubmit}>
               <div className="row g-2">
                 <div className="col-md-6">
                   <label htmlFor="correo" className="form-label fw-semibold small text-uppercase">Correo</label>
