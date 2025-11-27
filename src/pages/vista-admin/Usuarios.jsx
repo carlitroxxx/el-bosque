@@ -9,7 +9,7 @@ const fromApiUser = (u) => ({
   id: u.id,
   nombre: u.nombre,
   correo: u.email,      
-  contrasena: "",        
+  contrasena: "*********",        
   telefono: u.telefono || "",
   region: u.region || "",
   comuna: u.comuna || "",
