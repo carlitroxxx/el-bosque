@@ -10,7 +10,7 @@ export default function MensajesContacto() {
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("usuario"));
-    if (!user || user.rol !== "ADMINISTRADOR") {
+    if (!user || user.rol !== "admin") {
       navigate("/login");
     }
   }, [navigate]);
