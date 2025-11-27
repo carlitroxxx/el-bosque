@@ -31,43 +31,66 @@ export default function Registro() {
   };
 
   const onSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+  e.preventDefault();
+  setError("");
 
-    if (f.contrasena !== f.confirmar) {
-      setError("Las contraseñas no coinciden.");
-      return;
+
+  if (!f.correo || !f.nombre || !f.contrasena || !f.confirmar || !f.region || !f.comuna) {
+    setError("Completa todos los campos obligatorios.");
+    return;
+  }
+
+  const formato = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!formato.test(f.correo)) {
+    setError("Ingresa un correo electrónico válido.");
+    return;
+  }
+
+  if (f.contrasena.length < 4) {
+    setError("La contraseña debe tener al menos 4 caracteres.");
+    return;
+  }
+
+  if (f.contrasena !== f.confirmar) {
+    setError("Las contraseñas no coinciden.");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/registro`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: f.correo,
+        nombre: f.nombre,
+        password: f.contrasena,
+        telefono: f.telefono,
+        region: f.region,
+        comuna: f.comuna,
+      }),
+    });
+
+    if (!res.ok) {
+      let msg = "No fue posible registrar al usuario.";
+      try {
+        const data = await res.json();
+        if (data?.error) msg = data.error;
+      } catch (_) {}
+      throw new Error(msg);
     }
 
-    try {
-      const res = await fetch(`${API_URL}/registro`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: f.correo,
-          nombre: f.nombre,
-          password: f.contrasena,
-          telefono: f.telefono,
-          region: f.region,
-          comuna: f.comuna,
-        }),
-      });
+    const data = await res.json();
+    const { token, usuario } = data;
 
-      if (!res.ok) {
-        throw new Error("No fue posible registrar al usuario.");
-      }
+    localStorage.setItem("token", token);
+    localStorage.setItem("usuario", JSON.stringify(usuario));
 
-      const data = await res.json();
-      const { token, usuario } = data;
+    nav("/", { replace: true });
+  } catch (err) {
+    setError(err.message || "No fue posible registrar al usuario.");
+  }
+};
 
-      localStorage.setItem("token", token);
-      localStorage.setItem("usuario", JSON.stringify(usuario));
-
-      nav("/", { replace: true });
-    } catch (err) {
-      setError(err.message || "No fue posible registrar al usuario.");
-    }
-  };
 
   return (
     <div className="d-flex flex-column min-vh-100">
